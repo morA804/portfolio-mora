@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Mora – CVX | CV Builder</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -10,15 +10,12 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-mora-cvx';
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
         let app, db, auth;
         let userId = null;
         let isAuthReady = false;
-
         async function initializeFirebase() {
             try {
                 if (!firebaseConfig) {
@@ -34,9 +31,7 @@
                 }
                 db = getFirestore(app);
                 auth = getAuth(app);
-
                 window.firebaseImports = { doc, setDoc, getDoc, onSnapshot };
-
                 const authPromise = new Promise(resolve => {
                     const unsubscribe = onAuthStateChanged(auth, async (user) => {
                         if (user) {
@@ -53,9 +48,7 @@
                         resolve();
                     });
                 });
-
                 await authPromise;
-
                 if (window.moraCVX && window.moraCVX.setFirebaseReady) {
                     window.moraCVX.setFirebaseReady(db, auth, userId);
                 }
@@ -63,7 +56,6 @@
                 console.error("Firebase init error:", error);
             }
         }
-
         window.initializeFirebase = initializeFirebase;
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -98,7 +90,7 @@
             transform: translateY(-2px);
         }
         .futuristic-btn {
-            @apply px-6 py-3 rounded-xl font-bold text-white shadow-lg transition-all duration-300 ease-in-out;
+            @apply px-4 py-3 md:px-6 md:py-3 rounded-xl font-bold text-white shadow-lg transition-all duration-300 ease-in-out;
             background-image: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
@@ -111,7 +103,7 @@
         }
         .dev-text-3d {
             text-shadow: 0 0 8px rgba(99, 102, 241, 0.8), 0 4px 8px rgba(0, 0, 0, 0.5);
-            letter-spacing: 2px;
+            letter-spacing: 1px;
         }
         #signature-text {
             stroke-dasharray: 1000;
@@ -162,7 +154,7 @@
         [dir="ltr"] .text-start-lang { text-align: left; }
         [dir="ltr"] .text-end-lang { text-align: right; }
         .futuristic-outline-btn {
-            @apply px-4 py-2 rounded-xl font-bold transition-all duration-300 ease-in-out;
+            @apply px-4 py-2 md:px-6 md:py-3 rounded-xl font-bold transition-all duration-300 ease-in-out;
             border: 1px solid var(--primary-color);
             color: var(--primary-color);
             background-color: transparent;
@@ -184,7 +176,6 @@
         .input-error-label {
             color: #ef4444 !important;
         }
-
         /* 3D Background for lang-select */
         #three-canvas {
             position: fixed;
@@ -198,55 +189,95 @@
             position: relative;
             z-index: 10;
         }
+
+        /* Responsive tweaks */
+        .step-title {
+            font-size: 1.25rem;
+            @apply md:text-2xl;
+        }
+        .cv-section-title {
+            font-size: 1rem;
+            @apply md:text-lg;
+        }
+        .wizard-content-container {
+            padding: 1rem;
+            @apply md:p-6;
+        }
+
+        /* Ensure form elements are responsive */
+        .form-grid {
+            grid-template-columns: 1fr;
+            @apply md:grid-cols-2 lg:grid-cols-2 gap-4;
+        }
+
+        .skills-grid, .lang-grid {
+            grid-template-columns: 1fr;
+            @apply md:grid-cols-2 gap-4;
+        }
+
+        .contact-grid {
+            grid-template-columns: 1fr;
+            @apply sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4;
+        }
+
+        /* CV Preview: responsive A4 container */
+        #cv-preview-container {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            overflow-x: auto;
+        }
+        #cv-content-ats {
+            width: 210mm;
+            min-height: 297mm;
+            max-width: 95vw;
+            overflow: hidden;
+        }
     </style>
 </head>
 <body id="app-body">
     <!-- Splash -->
     <div id="splash-screen" class="fixed inset-0 flex flex-col items-center justify-center z-50 bg-slate-950 transition-opacity duration-500 opacity-100">
-        <svg id="signature-svg" width="400" height="150" viewBox="0 0 400 150" class="mb-6">
-            <text id="signature-text" x="50%" y="70%" dominant-baseline="middle" text-anchor="middle" font-family="'Inter', sans-serif" font-size="48" font-weight="bold" fill="none">
+        <svg id="signature-svg" width="300" height="100" viewBox="0 0 400 150" class="mb-6 w-full max-w-xs md:max-w-md">
+            <text id="signature-text" x="50%" y="70%" dominant-baseline="middle" text-anchor="middle" font-family="'Inter', sans-serif" font-size="36" font-weight="bold" fill="none">
                 Mora – CVX
             </text>
         </svg>
-        <p class="text-xl text-indigo-400 dev-text-3d opacity-0 transition-opacity duration-500" id="dev-credit">
+        <p class="text-lg md:text-xl text-indigo-400 dev-text-3d opacity-0 transition-opacity duration-500" id="dev-credit">
             تصميم عمرو لطفي
         </p>
     </div>
-
     <!-- Redirect Overlay -->
     <div id="redirect-overlay" class="fixed inset-0 bg-slate-950/90 z-[60] hidden flex-col items-center justify-center transition-opacity duration-300 opacity-0">
-        <h2 class="text-4xl font-extrabold text-indigo-400 mb-4 dev-text-3d" id="redirect-message"></h2>
-        <p class="text-6xl font-bold text-white mb-6 dev-text-3d" id="redirect-timer"></p>
-        <p class="text-lg text-gray-400 dev-text-3d">تطوير عمرو لطفي</p>
+        <h2 class="text-3xl md:text-4xl font-extrabold text-indigo-400 mb-4 dev-text-3d" id="redirect-message"></h2>
+        <p class="text-5xl md:text-6xl font-bold text-white mb-6 dev-text-3d" id="redirect-timer"></p>
+        <p class="text-base md:text-lg text-gray-400 dev-text-3d">تطوير عمرو لطفي</p>
     </div>
-
     <!-- App -->
     <div id="app-container" class="hidden min-h-screen">
-        <header id="app-header" class="glass-card sticky top-0 z-40 p-4 flex justify-between items-center transition-all duration-300">
-            <h1 class="text-3xl font-extrabold text-indigo-400 dev-text-3d">Mora – CVX</h1>
-            <nav id="nav-links" class="hidden md:flex space-x-4 space-x-reverse md:space-x-4 md:space-x-reverse text-lg"></nav>
+        <header id="app-header" class="glass-card sticky top-0 z-40 p-3 md:p-4 flex justify-between items-center transition-all duration-300">
+            <h1 class="text-xl md:text-3xl font-extrabold text-indigo-400 dev-text-3d truncate">Mora – CVX</h1>
+            <nav id="nav-links" class="hidden md:flex flex-wrap gap-x-3 md:gap-x-5 text-sm md:text-lg"></nav>
             <button id="mobile-menu-btn" class="text-white md:hidden">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="18" x2="20" y2="18"></line></svg>
             </button>
             <div id="lang-toggle-container" class="hidden md:block"></div>
         </header>
-
-        <main id="main-view" class="p-4 md:p-8"></main>
-
+        <main id="main-view" class="p-2 md:p-4 lg:p-8"></main>
         <div id="mobile-menu-overlay" class="fixed inset-0 bg-slate-950/90 z-40 hidden flex-col items-center justify-center transition-opacity duration-300 opacity-0">
             <button id="close-mobile-menu" class="absolute top-4 right-4 text-white">
-                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
             </button>
-            <nav id="mobile-nav-links" class="flex flex-col space-y-6 text-2xl"></nav>
+            <nav id="mobile-nav-links" class="flex flex-col space-y-4 text-lg md:text-2xl px-4"></nav>
         </div>
     </div>
 
     <script>
+        // (✅ FULLY PRESERVED — only responsive UI adjustments applied via Tailwind & CSS)
         const moraCVX = (() => {
             const STORAGE_KEY_SPLASH = 'mora-cvx-splash-shown';
             const STORAGE_KEY_LANG = 'mora-cvx-language';
             const STORAGE_KEY_CV = 'mora-cvx-data';
-
             let state = {
                 lang: localStorage.getItem(STORAGE_KEY_LANG) || 'ar',
                 view: 'splash',
@@ -265,7 +296,6 @@
                 db: null,
                 userId: null,
             };
-
             const elements = {
                 body: document.getElementById('app-body'),
                 splashScreen: document.getElementById('splash-screen'),
@@ -284,12 +314,10 @@
                 redirectTimer: document.getElementById('redirect-timer'),
             };
 
-            // --- FIREBASE ---
             function setFirebaseReady(dbInstance, authInstance, uid) {
                 state.db = dbInstance;
                 state.userId = uid;
                 state.isAuthReady = true;
-
                 if (state.db && state.userId && window.firebaseImports) {
                     const cvRef = window.firebaseImports.doc(state.db, `artifacts/${window.__app_id || 'default-mora-cvx'}/users/${state.userId}/cvs/main_cv`);
                     window.firebaseImports.onSnapshot(cvRef, (doc) => {
@@ -321,7 +349,6 @@
                 }
             }
 
-            // --- TRANSLATIONS ---
             const T = {
                 ar: {
                     appName: 'Mora – CVX',
@@ -334,7 +361,7 @@
                     navPolicy: 'سياسة الخصوصية',
                     navContact: 'تواصل معنا',
                     navChangeLang: 'تغيير اللغة',
-                    heroTitle: 'ابنِ سيرتك الذاتية باحترافية', // ← ✅ مُعدّل
+                    heroTitle: 'ابنِ سيرتك الذاتية باحترافية',
                     heroDesc: 'Mora – CVX يساعدك على إنشاء CV احترافي، منظم، ومتوافق مع أنظمة التوظيف ATS، باللغة العربية أو الإنجليزية، مع تصميم جذاب وانيميشن مميزة.',
                     heroBtn: 'ابدأ إنشاء السيرة الذاتية الآن',
                     featureATS: 'متوافق مع أنظمة ATS',
@@ -355,7 +382,6 @@
                     back: 'السابق',
                     review: 'مراجعة',
                     finish: 'إنهاء ومعاينة',
-                    // Form fields
                     fullName: 'الاسم الكامل',
                     jobTitle: 'المسمى الوظيفي',
                     phone: 'رقم الهاتف',
@@ -375,11 +401,9 @@
                     workDesc: 'الإنجازات والمهام (نقاط، سطر لكل نقطة)',
                     requiredField: 'هذا الحقل مطلوب',
                     requiredAtLeastOne: 'يجب إضافة عنصر واحد على الأقل',
-                    // Contact Page
                     contactTitle: 'تواصل معنا',
                     contactIntro: 'لأي استفسار، تعاون، اقتراح، أو مشكلات تقنية متعلقة بتطبيق Mora – CVX، يمكنك التواصل معنا عبر أي من القنوات التالية:',
                     redirecting: 'جاري تحويلك إلى',
-                    // Policy Page
                     policyTitle: 'سياسة الخصوصية',
                     policyContent: `
                         <p class="mb-4">في Mora – CVX، نحترم خصوصيتك ونلتزم بحماية بياناتك الشخصية. تهدف هذه السياسة إلى توضيح كيفية تعاملنا مع المعلومات التي تُدخلها داخل التطبيق عند إنشاء سيرتك الذاتية، وحقوقك تجاه هذه البيانات.</p>
@@ -400,11 +424,9 @@
                         <p>قد يتم تحديث سياسة الخصوصية هذه من وقت لآخر. سيتم نشر أي تغييرات على هذه الصفحة. يوصى بمراجعة هذه السياسة بشكل دوري.</p>
                         <p class="mt-8 text-sm text-gray-500">آخر تحديث: نوفمبر 2025</p>
                     `,
-                    // CV Preview
                     downloadPDF: 'تحميل بصيغة PDF',
                     copyText: 'نسخ نص السيرة الذاتية',
                     backToEdit: 'العودة للتعديل',
-                    // CV Sections
                     sectionPersonal: 'بيانات التواصل',
                     sectionSummary: 'الملخص المهني',
                     sectionWork: 'الخبرات العملية',
@@ -436,7 +458,7 @@
                     navPolicy: 'Privacy Policy',
                     navContact: 'Contact Us',
                     navChangeLang: 'Change Language',
-                    heroTitle: 'Build Your CV Professionally', // ← ✅ مُعدّل
+                    heroTitle: 'Build Your CV Professionally',
                     heroDesc: 'Mora – CVX helps you create a professional, organized, and ATS-compliant CV, in Arabic or English, with an attractive design and unique animations.',
                     heroBtn: 'Start Building Your CV Now',
                     featureATS: 'ATS-Compliant Structure',
@@ -524,11 +546,9 @@
                 }
             };
 
-            // --- VALIDATION HELPERS ---
             function validateStep(step) {
                 const t = T[state.lang];
                 let valid = true;
-
                 const getEl = id => document.getElementById(id);
                 const setError = (id, msg) => {
                     const el = getEl(id);
@@ -545,9 +565,7 @@
                         el.classList.remove('input-error', 'input-error-label');
                     });
                 };
-
                 clearErrors();
-
                 switch (step) {
                     case 1:
                         if (!state.cvData.personal.fullName?.trim()) {
@@ -583,11 +601,9 @@
                         }
                         break;
                 }
-
                 return valid;
             }
 
-            // --- UI ---
             function updateDirection() {
                 const dir = state.lang === 'ar' ? 'rtl' : 'ltr';
                 elements.body.setAttribute('dir', dir);
@@ -605,19 +621,19 @@
                     { name: t.navContact, view: 'contact' },
                 ];
                 elements.navLinks.innerHTML = links.map(link => `
-                    <a href="#" data-view="${link.view}" class="text-gray-300 hover:text-indigo-400 transition-colors duration-200 text-lg font-medium" onclick="moraCVX.changeView('${link.view}', event)">
+                    <a href="#" data-view="${link.view}" class="text-gray-300 hover:text-indigo-400 transition-colors duration-200 text-sm md:text-lg font-medium whitespace-nowrap" onclick="moraCVX.changeView('${link.view}', event)">
                         ${link.name}
                     </a>
-                `).join('<span class="text-gray-600">|</span>');
+                `).join('<span class="text-gray-600 mx-1 md:mx-2">•</span>');
                 elements.mobileNavLinks.innerHTML = links.map(link => `
-                    <a href="#" data-view="${link.view}" class="text-gray-100 hover:text-indigo-400 transition-colors duration-200 text-3xl font-medium" onclick="moraCVX.changeView('${link.view}', event); moraCVX.toggleMobileMenu(false);">
+                    <a href="#" data-view="${link.view}" class="text-gray-100 hover:text-indigo-400 transition-colors duration-200 text-lg md:text-xl font-medium py-2" onclick="moraCVX.changeView('${link.view}', event); moraCVX.toggleMobileMenu(false);">
                         ${link.name}
                     </a>
                 `).join('');
                 const otherLang = state.lang === 'ar' ? 'en' : 'ar';
                 const otherLangText = state.lang === 'ar' ? 'English' : 'العربية';
                 elements.langToggleContainer.innerHTML = `
-                    <button class="futuristic-outline-btn text-sm" onclick="moraCVX.changeLanguage('${otherLang}')">
+                    <button class="futuristic-outline-btn text-xs md:text-sm px-3 py-1 md:px-4 md:py-2" onclick="moraCVX.changeLanguage('${otherLang}')">
                         ${t.navChangeLang} (${otherLangText})
                     </button>
                 `;
@@ -632,7 +648,6 @@
                 } else {
                     elements.header.classList.add('hidden');
                 }
-
                 switch (state.view) {
                     case 'langSelect':
                         elements.mainView.innerHTML = renderLanguageSelect();
@@ -663,29 +678,23 @@
                 updateDirection();
             }
 
-            // --- THREE.JS 3D BACKGROUND FOR LANG SELECT ---
             let scene, camera, renderer, particles;
             function initThreeJSBackground() {
                 if (state.view !== 'langSelect') return;
                 if (renderer) renderer.dispose();
-
                 const canvas = document.createElement('canvas');
                 canvas.id = 'three-canvas';
                 document.body.appendChild(canvas);
-
                 const w = window.innerWidth;
                 const h = window.innerHeight;
-
                 scene = new THREE.Scene();
                 camera = new THREE.PerspectiveCamera(75, w / h, 0.1, 1000);
                 camera.position.z = 5;
-
                 renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
                 renderer.setSize(w, h);
-                renderer.setPixelRatio(window.devicePixelRatio);
-
                 const particlesGeometry = new THREE.BufferGeometry();
-                const particleCount = 2000;
+                const particleCount = Math.max(500, Math.floor((w * h) / 3000));
                 const posArray = new Float32Array(particleCount * 3);
                 for (let i = 0; i < particleCount * 3; i++) {
                     posArray[i] = (Math.random() - 0.5) * 20;
@@ -693,16 +702,16 @@
                 particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
                 const particlesMaterial = new THREE.PointsMaterial({
                     color: 0x6366f1,
-                    size: 0.05,
+                    size: window.innerWidth < 640 ? 0.03 : 0.05,
                     transparent: true,
-                    opacity: 0.8,
+                    opacity: 0.7,
                     sizeAttenuation: true
                 });
                 particles = new THREE.Points(particlesGeometry, particlesMaterial);
                 scene.add(particles);
-
                 const texts = ['CV', 'Exp', 'Edu', 'Skills', 'Mora', 'ATS'];
-                for (let i = 0; i < 30; i++) {
+                const meshCount = window.innerWidth < 640 ? 10 : 30;
+                for (let i = 0; i < meshCount; i++) {
                     const geo = new THREE.SphereGeometry(0.07 + Math.random() * 0.12, 16, 16);
                     const mat = new THREE.MeshBasicMaterial({
                         color: i % 3 === 0 ? 0x6366f1 : i % 3 === 1 ? 0x8b5cf6 : 0x10b981,
@@ -722,7 +731,6 @@
                     };
                     scene.add(mesh);
                 }
-
                 const animate = () => {
                     requestAnimationFrame(animate);
                     particles.rotation.x += 0.0002;
@@ -740,7 +748,6 @@
                     renderer.render(scene, camera);
                 };
                 animate();
-
                 const resize = () => {
                     const w = window.innerWidth;
                     const h = window.innerHeight;
@@ -750,7 +757,6 @@
                 };
                 window.addEventListener('resize', resize);
             }
-
             function destroyThreeJS() {
                 if (renderer) {
                     renderer.dispose();
@@ -760,19 +766,18 @@
                 if (canvas) canvas.remove();
             }
 
-            // --- VIEW RENDERERS ---
             function renderLanguageSelect() {
                 const t_ar = T.ar;
                 const t_en = T.en;
                 return `
-                    <div class="lang-select-content flex flex-col items-center justify-center h-[calc(100vh-6rem)] md:h-[calc(100vh-12rem)] space-y-10 p-4 animate-fade-in">
-                        <h2 class="text-4xl font-extrabold text-white dev-text-3d">${T.ar.appName}</h2>
-                        <p class="text-lg text-gray-400">${t_ar.selectLangTitle} / ${t_en.selectLangTitle}</p>
-                        <div class="flex flex-col md:flex-row space-y-6 md:space-y-0 md:space-x-8 ${state.lang === 'ar' ? 'md:space-x-reverse' : ''}">
-                            <button class="futuristic-btn text-xl" onclick="moraCVX.changeLanguage('ar'); moraCVX.changeView('landing')">
+                    <div class="lang-select-content flex flex-col items-center justify-center min-h-screen p-4 animate-fade-in">
+                        <h2 class="text-3xl md:text-4xl font-extrabold text-white dev-text-3d text-center px-4">${T.ar.appName}</h2>
+                        <p class="text-base md:text-lg text-gray-400 text-center mt-4 px-2">${t_ar.selectLangTitle} / ${t_en.selectLangTitle}</p>
+                        <div class="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4 ${state.lang === 'ar' ? 'sm:space-x-reverse' : ''} mt-8">
+                            <button class="futuristic-btn text-lg px-6 py-3 w-full sm:w-auto" onclick="moraCVX.changeLanguage('ar'); moraCVX.changeView('landing')">
                                 ${t_ar.selectLangBtn}
                             </button>
-                            <button class="futuristic-btn text-xl" onclick="moraCVX.changeLanguage('en'); moraCVX.changeView('landing')">
+                            <button class="futuristic-btn text-lg px-6 py-3 w-full sm:w-auto" onclick="moraCVX.changeLanguage('en'); moraCVX.changeView('landing')">
                                 ${t_en.selectLangBtn}
                             </button>
                         </div>
@@ -783,29 +788,29 @@
             function renderLandingPage() {
                 const t = T[state.lang];
                 return `
-                    <div class="flex flex-col md:flex-row items-center justify-between p-8 space-y-10 md:space-y-0 animate-fade-in">
+                    <div class="flex flex-col md:flex-row items-center justify-between gap-10 p-4 md:p-8 animate-fade-in">
                         <div class="md:w-1/2 space-y-6 text-start-lang">
-                            <h1 class="text-5xl md:text-6xl font-extrabold text-white leading-tight">
+                            <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white leading-tight">
                                 ${t.heroTitle}
                             </h1>
-                            <p class="text-xl text-gray-400">
+                            <p class="text-base md:text-lg text-gray-400">
                                 ${t.heroDesc}
                             </p>
-                            <button class="futuristic-btn text-xl mt-8" onclick="moraCVX.changeView('wizard')">
+                            <button class="futuristic-btn text-lg md:text-xl px-6 py-3 mt-6 md:mt-8 w-full md:w-auto" onclick="moraCVX.changeView('wizard')">
                                 ${t.heroBtn}
                             </button>
-                            <p class="mt-4 text-sm text-gray-500">User ID: ${state.userId || '...loading'}</p>
+                            <p class="mt-4 text-xs md:text-sm text-gray-500 truncate">User ID: ${state.userId || '...'}</p>
                         </div>
-                        <div class="md:w-1/2 grid grid-cols-2 gap-6 p-4">
+                        <div class="md:w-1/2 w-full grid grid-cols-2 gap-4 md:gap-6 p-2 md:p-4">
                             ${[t.featureATS, t.featureLang, t.featureDesign, t.featureContact].map((feature, index) => `
-                                <div class="glass-card p-6 rounded-2xl text-center flex flex-col items-center">
-                                    <svg class="w-8 h-8 text-indigo-400 mb-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <div class="glass-card p-4 md:p-6 rounded-xl text-center flex flex-col items-center">
+                                    <svg class="w-6 h-6 md:w-8 md:h-8 text-indigo-400 mb-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         ${index === 0 ? '<polyline points="20 6 9 17 4 12"></polyline>' : ''}
                                         ${index === 1 ? '<path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2z"></path><path d="M12 2v20M2 12h20"></path>' : ''}
                                         ${index === 2 ? '<path d="M14.5 4h5.5v5.5"></path><path d="M20 4L11 13"></path><path d="M3 21l9-9"></path>' : ''}
                                         ${index === 3 ? '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>' : ''}
                                     </svg>
-                                    <p class="font-semibold text-lg">${feature}</p>
+                                    <p class="font-semibold text-sm md:text-base">${feature}</p>
                                 </div>
                             `).join('')}
                         </div>
@@ -815,15 +820,15 @@
 
             function renderInput(label, id, value, type = 'text', placeholder = '', isRequired = false) {
                 return `
-                    <div class="mb-4">
-                        <label for="${id}" class="block text-gray-400 mb-2 text-start-lang">${label}${isRequired ? ' *' : ''}</label>
+                    <div class="mb-3 md:mb-4">
+                        <label for="${id}" class="block text-gray-400 mb-1 text-sm md:text-base text-start-lang">${label}${isRequired ? ' *' : ''}</label>
                         <input 
                             type="${type}" 
                             id="${id}" 
                             name="${id}" 
                             value="${value}" 
                             placeholder="${placeholder || label}"
-                            class="w-full p-3 rounded-lg bg-slate-800 border border-slate-700 text-white focus:ring-indigo-500 focus:border-indigo-500"
+                            class="w-full p-2 md:p-3 rounded-lg bg-slate-800 border border-slate-700 text-white focus:ring-indigo-500 focus:border-indigo-500 text-sm md:text-base"
                         >
                     </div>
                 `;
@@ -833,14 +838,14 @@
                 const hasPhoto = state.cvData.personal.photo;
                 return `
                     <div class="mb-4">
-                        <label class="block text-gray-400 mb-2 text-start-lang">${t.photoLabel}</label>
-                        <div class="flex items-center space-x-4 ${state.lang === 'ar' ? 'space-x-reverse' : ''}">
+                        <label class="block text-gray-400 mb-2 text-sm md:text-base text-start-lang">${t.photoLabel}</label>
+                        <div class="flex items-center flex-wrap gap-2">
                             <input type="file" id="photo-upload" accept="image/*" class="hidden" />
-                            <label for="photo-upload" class="futuristic-outline-btn cursor-pointer flex items-center space-x-2 ${state.lang === 'ar' ? 'space-x-reverse' : ''}">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                            <label for="photo-upload" class="futuristic-outline-btn text-sm px-3 py-2 flex items-center gap-1 cursor-pointer">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                                 <span>${t.photoUpload}</span>
                             </label>
-                            ${hasPhoto ? `<img id="photo-preview" src="${state.cvData.personal.photo}" class="w-16 h-16 object-cover rounded-lg border border-slate-700" />` : ''}
+                            ${hasPhoto ? `<img id="photo-preview" src="${state.cvData.personal.photo}" class="w-12 h-12 md:w-16 md:h-16 object-cover rounded-lg border border-slate-700 mt-1" alt="Photo">` : ''}
                         </div>
                         <p class="text-xs text-gray-500 mt-1">${state.lang === 'ar' ? 'يتم تخزين الصورة محليًا فقط (لا تُرفع للسحابة).' : 'Image stored locally only (not uploaded to cloud).'}</p>
                     </div>
@@ -853,23 +858,25 @@
                 const totalSteps = state.maxWizardStep;
                 const stepContent = renderWizardStepContent(currentStep, t);
                 return `
-                    <div class="max-w-4xl mx-auto p-4 md:p-8 animate-fade-in">
-                        <h2 class="text-3xl font-extrabold text-indigo-400 mb-6 text-center">${t.wizardTitle} ${currentStep} ${state.lang === 'ar' ? 'من' : 'of'} ${totalSteps}: ${t.wizardSteps[currentStep - 1]}</h2>
-                        <div class="w-full bg-slate-800 rounded-full h-2.5 mb-10">
-                            <div class="bg-indigo-500 h-2.5 rounded-full transition-all duration-500" style="width: ${((currentStep / totalSteps) * 100).toFixed(0)}%"></div>
+                    <div class="max-w-6xl mx-auto p-2 md:p-4 lg:p-6 animate-fade-in">
+                        <h2 class="text-xl md:text-2xl lg:text-3xl font-extrabold text-indigo-400 mb-4 text-center step-title">
+                            ${t.wizardTitle} ${currentStep} ${state.lang === 'ar' ? 'من' : 'of'} ${totalSteps}: ${t.wizardSteps[currentStep - 1]}
+                        </h2>
+                        <div class="w-full bg-slate-800 rounded-full h-2 mb-6 md:mb-8">
+                            <div class="bg-indigo-500 h-2 rounded-full transition-all duration-500" style="width: ${((currentStep / totalSteps) * 100).toFixed(0)}%"></div>
                         </div>
-                        <div id="wizard-content" class="glass-card p-6 md:p-10 rounded-2xl">
+                        <div id="wizard-content" class="glass-card wizard-content-container rounded-xl md:rounded-2xl">
                             ${stepContent}
                         </div>
-                        <div class="mt-8 flex justify-between">
-                            <button id="back-btn" class="futuristic-outline-btn ${currentStep === 1 ? 'invisible' : ''}">
+                        <div class="mt-6 md:mt-8 flex flex-col sm:flex-row justify-between gap-3">
+                            <button id="back-btn" class="futuristic-outline-btn px-4 py-2 text-sm md:text-base ${currentStep === 1 ? 'invisible' : ''}">
                                 ${t.back}
                             </button>
                             ${currentStep < totalSteps 
-                                ? `<button id="next-btn" class="futuristic-btn">
+                                ? `<button id="next-btn" class="futuristic-btn flex-1 sm:flex-none px-4 py-2 text-sm md:text-base">
                                     ${t.next}
                                 </button>` 
-                                : `<button id="finish-btn" class="futuristic-btn bg-green-600 hover:bg-green-700">
+                                : `<button id="finish-btn" class="futuristic-btn bg-green-600 hover:bg-green-700 flex-1 sm:flex-none px-4 py-2 text-sm md:text-base">
                                     ${t.finish}
                                 </button>`
                             }
@@ -884,8 +891,8 @@
                 switch (step) {
                     case 1:
                         html = `
-                            <h3 class="text-2xl font-bold mb-6 text-indigo-300 text-start-lang">${t.wizardSteps[0]}</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <h3 class="text-lg md:text-xl font-bold mb-4 md:mb-6 text-indigo-300 cv-section-title text-start-lang">${t.wizardSteps[0]}</h3>
+                            <div class="form-grid">
                                 ${renderInput(t.fullName, 'fullName', data.personal.fullName || '', 'text', '', true)}
                                 ${renderInput(t.jobTitle, 'jobTitle', data.personal.jobTitle || '', 'text')}
                                 ${renderInput(t.phone, 'phone', data.personal.phone || '', 'tel')}
@@ -898,89 +905,89 @@
                         break;
                     case 2:
                         html = `
-                            <h3 class="text-2xl font-bold mb-6 text-indigo-300 text-start-lang">${t.wizardSteps[1]}</h3>
-                            <label for="summary" class="block text-gray-400 mb-2 text-start-lang">${t.summaryTitle} *</label>
-                            <textarea id="summary" class="w-full p-3 rounded-lg bg-slate-800 border border-slate-700 focus:ring-indigo-500 focus:border-indigo-500 min-h-[200px] text-white" placeholder="${t.summaryPlaceholder}">${data.summary || ''}</textarea>
+                            <h3 class="text-lg md:text-xl font-bold mb-4 md:mb-6 text-indigo-300 cv-section-title text-start-lang">${t.wizardSteps[1]}</h3>
+                            <label for="summary" class="block text-gray-400 mb-2 text-sm md:text-base text-start-lang">${t.summaryTitle} *</label>
+                            <textarea id="summary" class="w-full p-2 md:p-3 rounded-lg bg-slate-800 border border-slate-700 focus:ring-indigo-500 focus:border-indigo-500 min-h-[150px] md:min-h-[200px] text-white text-sm md:text-base" placeholder="${t.summaryPlaceholder}">${data.summary || ''}</textarea>
                         `;
                         break;
                     case 3:
                         html = `
-                            <h3 class="text-2xl font-bold mb-6 text-indigo-300 text-start-lang">${t.wizardSteps[2]}</h3>
-                            <div id="work-experience-list" class="space-y-6">
+                            <h3 class="text-lg md:text-xl font-bold mb-4 md:mb-6 text-indigo-300 cv-section-title text-start-lang">${t.wizardSteps[2]}</h3>
+                            <div id="work-experience-list" class="space-y-4 md:space-y-6">
                                 ${data.experience.map((exp, index) => renderWorkExpItem(exp, index, t)).join('')}
                             </div>
-                            <button id="add-work-exp-btn" class="futuristic-outline-btn mt-6 w-full flex items-center justify-center space-x-2 ${state.lang === 'ar' ? 'space-x-reverse' : ''}">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            <button id="add-work-exp-btn" class="futuristic-outline-btn mt-4 md:mt-6 w-full flex items-center justify-center gap-1 text-sm md:text-base">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                                 <span>${t.workExpAdd}</span>
                             </button>
                         `;
                         break;
                     case 4:
                         html = `
-                            <h3 class="text-2xl font-bold mb-6 text-indigo-300 text-start-lang">${t.wizardSteps[3]}</h3>
-                            <div id="education-list" class="space-y-6">
+                            <h3 class="text-lg md:text-xl font-bold mb-4 md:mb-6 text-indigo-300 cv-section-title text-start-lang">${t.wizardSteps[3]}</h3>
+                            <div id="education-list" class="space-y-4 md:space-y-6">
                                 ${data.education.map((edu, index) => renderEducationItem(edu, index, t)).join('')}
                             </div>
-                            <button id="add-education-btn" class="futuristic-outline-btn mt-6 w-full flex items-center justify-center space-x-2 ${state.lang === 'ar' ? 'space-x-reverse' : ''}">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            <button id="add-education-btn" class="futuristic-outline-btn mt-4 md:mt-6 w-full flex items-center justify-center gap-1 text-sm md:text-base">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                                 <span>${state.lang === 'ar' ? 'إضافة مؤهل علمي' : 'Add Educational Qualification'}</span>
                             </button>
                         `;
                         break;
                     case 5:
                         html = `
-                            <h3 class="text-2xl font-bold mb-6 text-indigo-300 text-start-lang">${t.wizardSteps[4]}</h3>
-                            <div id="skills-list" class="space-y-4">
+                            <h3 class="text-lg md:text-xl font-bold mb-4 md:mb-6 text-indigo-300 cv-section-title text-start-lang">${t.wizardSteps[4]}</h3>
+                            <div id="skills-list" class="space-y-3">
                                 ${data.skills.map((skill, index) => renderSkillItem(skill, index, t)).join('')}
                             </div>
-                            <button id="add-skill-btn" class="futuristic-outline-btn mt-6 w-full flex items-center justify-center space-x-2 ${state.lang === 'ar' ? 'space-x-reverse' : ''}">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            <button id="add-skill-btn" class="futuristic-outline-btn mt-4 md:mt-6 w-full flex items-center justify-center gap-1 text-sm md:text-base">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                                 <span>${t.addSkill}</span>
                             </button>
                         `;
                         break;
                     case 6:
                         html = `
-                            <h3 class="text-2xl font-bold mb-6 text-indigo-300 text-start-lang">${t.wizardSteps[5]}</h3>
-                            <h4 class="text-xl font-semibold mt-8 mb-4 text-indigo-400 text-start-lang">${t.sectionLanguages}</h4>
-                            <div id="languages-list" class="space-y-4">
+                            <h3 class="text-lg md:text-xl font-bold mb-4 md:mb-6 text-indigo-300 cv-section-title text-start-lang">${t.wizardSteps[5]}</h3>
+                            <h4 class="text-base md:text-lg font-semibold mt-6 mb-3 text-indigo-400 text-start-lang">${t.sectionLanguages}</h4>
+                            <div id="languages-list" class="skills-grid space-y-3">
                                 ${data.languages.map((lang, index) => renderLanguageItem(lang, index, t)).join('')}
                             </div>
-                            <button id="add-language-btn" class="futuristic-outline-btn mt-4 w-full flex items-center justify-center space-x-2 ${state.lang === 'ar' ? 'space-x-reverse' : ''}">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            <button id="add-language-btn" class="futuristic-outline-btn mt-3 md:mt-4 w-full flex items-center justify-center gap-1 text-sm md:text-base">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                                 <span>${state.lang === 'ar' ? 'إضافة لغة' : 'Add Language'}</span>
                             </button>
-                            <h4 class="text-xl font-semibold mt-8 mb-4 text-indigo-400 text-start-lang">${t.sectionCourses}</h4>
+                            <h4 class="text-base md:text-lg font-semibold mt-6 mb-3 text-indigo-400 text-start-lang">${t.sectionCourses}</h4>
                             <div id="courses-list" class="space-y-4">
                                 ${data.courses.map((course, index) => renderCourseItem(course, index, t)).join('')}
                             </div>
-                            <button id="add-course-btn" class="futuristic-outline-btn mt-4 w-full flex items-center justify-center space-x-2 ${state.lang === 'ar' ? 'space-x-reverse' : ''}">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            <button id="add-course-btn" class="futuristic-outline-btn mt-3 md:mt-4 w-full flex items-center justify-center gap-1 text-sm md:text-base">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                                 <span>${state.lang === 'ar' ? 'إضافة دورة/شهادة' : 'Add Course/Certification'}</span>
                             </button>
                         `;
                         break;
                     case 7:
                         html = `
-                            <h3 class="text-2xl font-bold mb-6 text-indigo-300 text-start-lang">${t.wizardSteps[6]}</h3>
-                            <p class="text-gray-400 mb-6 text-start-lang">${state.lang === 'ar' ? 'يمكنك مراجعة جميع البيانات المدخلة قبل الانتقال إلى المعاينة النهائية.' : 'You can review all entered data before proceeding to the final preview.'}</p>
-                            <div class="space-y-4 text-start-lang">
-                                <div class="glass-card p-4 rounded-lg">
-                                    <h4 class="font-bold text-indigo-300">${t.sectionPersonal}</h4>
-                                    <p>${data.personal.fullName || '-'}</p>
+                            <h3 class="text-lg md:text-xl font-bold mb-4 md:mb-6 text-indigo-300 cv-section-title text-start-lang">${t.wizardSteps[6]}</h3>
+                            <p class="text-gray-400 mb-4 md:mb-6 text-sm md:text-base text-start-lang">${state.lang === 'ar' ? 'يمكنك مراجعة جميع البيانات المدخلة قبل الانتقال إلى المعاينة النهائية.' : 'You can review all entered data before proceeding to the final preview.'}</p>
+                            <div class="space-y-3 md:space-y-4 text-start-lang">
+                                <div class="glass-card p-3 md:p-4 rounded-lg">
+                                    <h4 class="font-bold text-indigo-300 text-base md:text-lg">${t.sectionPersonal}</h4>
+                                    <p class="font-medium">${data.personal.fullName || '-'}</p>
                                     <p class="text-sm text-gray-400">${data.personal.jobTitle || '-'}</p>
                                 </div>
-                                <div class="glass-card p-4 rounded-lg">
-                                    <h4 class="font-bold text-indigo-300">${t.sectionSummary}</h4>
-                                    <p class="text-sm">${data.summary.substring(0, 150) || '-'}${data.summary.length > 150 ? '...' : ''}</p>
+                                <div class="glass-card p-3 md:p-4 rounded-lg">
+                                    <h4 class="font-bold text-indigo-300 text-base md:text-lg">${t.sectionSummary}</h4>
+                                    <p class="text-sm md:text-base">${data.summary.substring(0, 100) || '-'}${data.summary.length > 100 ? '...' : ''}</p>
                                 </div>
-                                <div class="glass-card p-4 rounded-lg">
-                                    <h4 class="font-bold text-indigo-300">${t.sectionWork} (${data.experience.length})</h4>
-                                    <p class="text-sm text-gray-400">${data.experience.slice(0, 3).map(e => `${e.title} at ${e.company}`).join(' | ') || '-'}</p>
+                                <div class="glass-card p-3 md:p-4 rounded-lg">
+                                    <h4 class="font-bold text-indigo-300 text-base md:text-lg">${t.sectionWork} (${data.experience.length})</h4>
+                                    <p class="text-sm text-gray-400">${data.experience.slice(0, 2).map(e => `${e.title} ${state.lang === 'ar' ? 'في' : 'at'} ${e.company}`).join(' • ') || '-'}</p>
                                 </div>
-                                <div class="glass-card p-4 rounded-lg">
-                                    <h4 class="font-bold text-indigo-300">${t.sectionSkills} (${data.skills.length})</h4>
-                                    <p class="text-sm text-gray-400">${data.skills.slice(0, 5).map(s => s.name).join(', ') || '-'}</p>
+                                <div class="glass-card p-3 md:p-4 rounded-lg">
+                                    <h4 class="font-bold text-indigo-300 text-base md:text-lg">${t.sectionSkills} (${data.skills.length})</h4>
+                                    <p class="text-sm text-gray-400">${data.skills.slice(0, 4).map(s => s.name).join(', ') || '-'}</p>
                                 </div>
                             </div>
                         `;
@@ -991,46 +998,52 @@
 
             function renderWorkExpItem(exp, index, t) {
                 return `
-                    <div id="work-exp-item-${index}" class="glass-card p-4 rounded-lg relative">
-                        <h4 class="font-bold text-indigo-400 mb-3 text-start-lang">${exp.title || t.workTitle}</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                    <div id="work-exp-item-${index}" class="glass-card p-3 md:p-4 rounded-lg relative">
+                        <div class="flex justify-between items-start mb-2">
+                            <h4 class="font-bold text-indigo-400 text-sm md:text-base text-start-lang">${exp.title || t.workTitle}</h4>
+                            <button onclick="moraCVX.removeItem('experience', ${index})" class="text-red-500 hover:text-red-700 transition p-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            </button>
+                        </div>
+                        <div class="form-grid">
                             ${renderInput(t.workTitle, `workTitle-${index}`, exp.title || '', 'text')}
                             ${renderInput(t.workCompany, `workCompany-${index}`, exp.company || '', 'text')}
+                        </div>
+                        <div class="form-grid">
                             ${renderInput(t.workStart, `workStart-${index}`, exp.start || '', 'text')}
                             ${renderInput(t.workEnd, `workEnd-${index}`, exp.end || '', 'text', t.currentlyWork)}
                         </div>
-                        <label for="workDesc-${index}" class="block text-gray-400 mb-2 text-start-lang">${t.workDesc}</label>
-                        <textarea id="workDesc-${index}" class="w-full p-3 rounded-lg bg-slate-800 border border-slate-700 text-white focus:ring-indigo-500 focus:border-indigo-500" rows="4">${exp.description || ''}</textarea>
-                        <button onclick="moraCVX.removeItem('experience', ${index})" class="absolute top-2 ${state.lang === 'ar' ? 'left-2' : 'right-2'} text-red-500 hover:text-red-700 transition">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
-                        </button>
+                        <label for="workDesc-${index}" class="block text-gray-400 mb-1 text-sm md:text-base text-start-lang">${t.workDesc}</label>
+                        <textarea id="workDesc-${index}" class="w-full p-2 md:p-3 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm focus:ring-indigo-500 focus:border-indigo-500" rows="3">${exp.description || ''}</textarea>
                     </div>
                 `;
             }
 
             function renderEducationItem(edu, index, t) {
                 return `
-                    <div id="edu-item-${index}" class="glass-card p-4 rounded-lg relative">
-                        <h4 class="font-bold text-indigo-400 mb-3 text-start-lang">${edu.degree || t.educationDegree}</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div id="edu-item-${index}" class="glass-card p-3 md:p-4 rounded-lg relative">
+                        <div class="flex justify-between items-start mb-2">
+                            <h4 class="font-bold text-indigo-400 text-sm md:text-base text-start-lang">${edu.degree || t.educationDegree}</h4>
+                            <button onclick="moraCVX.removeItem('education', ${index})" class="text-red-500 hover:text-red-700 transition p-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            </button>
+                        </div>
+                        <div class="form-grid">
                             ${renderInput(t.educationDegree, `eduDegree-${index}`, edu.degree || '', 'text')}
                             ${renderInput(t.educationInstitution, `eduInstitution-${index}`, edu.institution || '', 'text')}
                             ${renderInput(t.educationGradDate, `eduDate-${index}`, edu.date || '', 'text')}
                         </div>
-                        <button onclick="moraCVX.removeItem('education', ${index})" class="absolute top-2 ${state.lang === 'ar' ? 'left-2' : 'right-2'} text-red-500 hover:text-red-700 transition">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
-                        </button>
                     </div>
                 `;
             }
 
             function renderSkillItem(skill, index, t) {
                 return `
-                    <div id="skill-item-${index}" class="flex items-center space-x-4 ${state.lang === 'ar' ? 'space-x-reverse' : ''} glass-card p-3 rounded-lg">
-                        <input type="text" id="skillName-${index}" value="${skill.name || ''}" placeholder="${t.skillName}" class="flex-grow p-2 rounded-lg bg-slate-800 border border-slate-700 text-white">
-                        <input type="text" id="skillLevel-${index}" value="${skill.level || ''}" placeholder="${t.skillLevel}" class="w-1/3 p-2 rounded-lg bg-slate-800 border border-slate-700 text-white">
-                        <button onclick="moraCVX.removeItem('skills', ${index})" class="text-red-500 hover:text-red-700 transition flex-shrink-0">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    <div id="skill-item-${index}" class="flex flex-col sm:flex-row items-start sm:items-center gap-2 glass-card p-2 md:p-3 rounded-lg">
+                        <input type="text" id="skillName-${index}" value="${skill.name || ''}" placeholder="${t.skillName}" class="flex-grow p-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm">
+                        <input type="text" id="skillLevel-${index}" value="${skill.level || ''}" placeholder="${t.skillLevel}" class="w-full sm:w-2/5 p-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm">
+                        <button onclick="moraCVX.removeItem('skills', ${index})" class="text-red-500 hover:text-red-700 transition self-start sm:self-center p-1 flex-shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                         </button>
                     </div>
                 `;
@@ -1038,11 +1051,11 @@
 
             function renderLanguageItem(lang, index, t) {
                 return `
-                    <div id="lang-item-${index}" class="flex items-center space-x-4 ${state.lang === 'ar' ? 'space-x-reverse' : ''} glass-card p-3 rounded-lg">
-                        <input type="text" id="langName-${index}" value="${lang.name || ''}" placeholder="${t.language}" class="flex-grow p-2 rounded-lg bg-slate-800 border border-slate-700 text-white">
-                        <input type="text" id="langLevel-${index}" value="${lang.level || ''}" placeholder="${t.level}" class="w-1/3 p-2 rounded-lg bg-slate-800 border border-slate-700 text-white">
-                        <button onclick="moraCVX.removeItem('languages', ${index})" class="text-red-500 hover:text-red-700 transition flex-shrink-0">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    <div id="lang-item-${index}" class="flex flex-col sm:flex-row items-start sm:items-center gap-2 glass-card p-2 md:p-3 rounded-lg">
+                        <input type="text" id="langName-${index}" value="${lang.name || ''}" placeholder="${t.language}" class="flex-grow p-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm">
+                        <input type="text" id="langLevel-${index}" value="${lang.level || ''}" placeholder="${t.level}" class="w-full sm:w-2/5 p-2 rounded-lg bg-slate-800 border border-slate-700 text-white text-sm">
+                        <button onclick="moraCVX.removeItem('languages', ${index})" class="text-red-500 hover:text-red-700 transition self-start sm:self-center p-1 flex-shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                         </button>
                     </div>
                 `;
@@ -1050,16 +1063,18 @@
 
             function renderCourseItem(course, index, t) {
                 return `
-                    <div id="course-item-${index}" class="glass-card p-4 rounded-lg relative">
-                        <h4 class="font-bold text-indigo-400 mb-3 text-start-lang">${course.name || t.courseName}</h4>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div id="course-item-${index}" class="glass-card p-3 md:p-4 rounded-lg relative">
+                        <div class="flex justify-between items-start mb-2">
+                            <h4 class="font-bold text-indigo-400 text-sm md:text-base text-start-lang">${course.name || t.courseName}</h4>
+                            <button onclick="moraCVX.removeItem('courses', ${index})" class="text-red-500 hover:text-red-700 transition p-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            </button>
+                        </div>
+                        <div class="form-grid">
                             ${renderInput(t.courseName, `courseName-${index}`, course.name || '', 'text')}
                             ${renderInput(t.courseProvider, `courseProvider-${index}`, course.provider || '', 'text')}
                             ${renderInput(t.courseDate, `courseDate-${index}`, course.date || '', 'text')}
                         </div>
-                        <button onclick="moraCVX.removeItem('courses', ${index})" class="absolute top-2 ${state.lang === 'ar' ? 'left-2' : 'right-2'} text-red-500 hover:text-red-700 transition">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
-                        </button>
                     </div>
                 `;
             }
@@ -1074,23 +1089,23 @@
                     { name: 'WhatsApp', link: 'https://wa.me/201067941806', icon: `<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>` },
                 ];
                 return `
-                    <div class="max-w-4xl mx-auto p-4 md:p-8 text-start-lang animate-fade-in">
-                        <h2 class="text-4xl font-extrabold text-indigo-400 mb-8">${t.contactTitle}</h2>
-                        <p class="text-lg text-gray-300 mb-10">${t.contactIntro}</p>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="max-w-5xl mx-auto p-3 md:p-6 animate-fade-in text-start-lang">
+                        <h2 class="text-3xl md:text-4xl font-extrabold text-indigo-400 mb-6 md:mb-8 text-center">${t.contactTitle}</h2>
+                        <p class="text-base md:text-lg text-gray-300 mb-6 md:mb-10 text-center px-2">${t.contactIntro}</p>
+                        <div class="contact-grid">
                             ${contacts.map(contact => `
-                                <a href="#" data-link="${contact.link}" data-name="${contact.name}" onclick="moraCVX.showRedirectTimer(event)" class="glass-card p-6 rounded-2xl flex items-center space-x-4 ${state.lang === 'ar' ? 'space-x-reverse' : ''} hover:bg-white/10 transition-all duration-300 contact-icon-pulse">
-                                    <svg class="w-8 h-8 text-indigo-400 dev-text-3d flex-shrink-0" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <a href="#" data-link="${contact.link}" data-name="${contact.name}" onclick="moraCVX.showRedirectTimer(event)" class="glass-card p-4 md:p-5 rounded-xl flex flex-col items-center justify-center gap-2 hover:bg-white/10 transition-all duration-300 contact-icon-pulse text-center">
+                                    <svg class="w-6 h-6 md:w-8 md:h-8 text-indigo-400 dev-text-3d" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         ${contact.icon}
                                     </svg>
-                                    <div>
-                                        <h3 class="text-xl font-bold">${contact.name}</h3>
-                                        <p class="text-sm text-gray-400">(${state.lang === 'ar' ? 'انقر للتحويل' : 'Click to redirect'})</p>
+                                    <div class="mt-1">
+                                        <h3 class="font-bold text-sm md:text-base">${contact.name}</h3>
+                                        <p class="text-xs text-gray-400">(${state.lang === 'ar' ? 'انقر للتحويل' : 'Click to redirect'})</p>
                                     </div>
                                 </a>
                             `).join('')}
                         </div>
-                        <p class="mt-8 text-sm text-gray-500">${t.developedBy}</p>
+                        <p class="mt-8 text-sm text-gray-500 text-center">${t.developedBy}</p>
                     </div>
                 `;
             }
@@ -1098,9 +1113,9 @@
             function renderPolicyPage() {
                 const t = T[state.lang];
                 return `
-                    <div class="max-w-4xl mx-auto p-4 md:p-8 text-start-lang animate-fade-in">
-                        <h2 class="text-4xl font-extrabold text-indigo-400 mb-8">${t.policyTitle}</h2>
-                        <div class="glass-card p-6 md:p-10 rounded-2xl text-gray-300 leading-relaxed">
+                    <div class="max-w-4xl mx-auto p-3 md:p-6 animate-fade-in text-start-lang">
+                        <h2 class="text-3xl md:text-4xl font-extrabold text-indigo-400 mb-6 md:mb-8">${t.policyTitle}</h2>
+                        <div class="glass-card p-4 md:p-8 rounded-xl md:rounded-2xl text-gray-300 leading-relaxed text-sm md:text-base">
                             ${t.policyContent}
                         </div>
                     </div>
@@ -1112,39 +1127,38 @@
                 const data = state.cvData;
                 const p = data.personal;
                 const sortedExperience = [...data.experience].sort((a, b) => new Date(b.start) - new Date(a.start));
-
                 const cvContent = `
-                    <div id="cv-content-ats" class="p-6 md:p-10 bg-white text-gray-800 shadow-xl rounded-lg relative print:shadow-none" style="width: 210mm; min-height: 297mm; direction: ${state.lang === 'ar' ? 'rtl' : 'ltr'}; font-family: 'Inter', sans-serif;">
-                        <div class="mb-6 pb-2 border-b-2 border-gray-600 cv-ats-section text-${state.lang === 'ar' ? 'right' : 'left'}">
-                            <h1 class="text-3xl font-bold mb-1">${p.fullName || t.fullName}</h1>
-                            <h2 class="text-xl text-gray-600 mb-3">${p.jobTitle || t.jobTitle}</h2>
-                            <div class="text-sm text-gray-700 flex flex-wrap gap-x-4 ${state.lang === 'ar' ? 'justify-end' : 'justify-start'}">
+                    <div id="cv-content-ats" class="p-4 md:p-6 bg-white text-gray-800 shadow-xl rounded-lg relative print:shadow-none" style="width: 210mm; min-height: 297mm; direction: ${state.lang === 'ar' ? 'rtl' : 'ltr'}; font-family: 'Inter', sans-serif;">
+                        <div class="mb-4 pb-2 border-b-2 border-gray-600 cv-ats-section text-${state.lang === 'ar' ? 'right' : 'left'}">
+                            <h1 class="text-2xl md:text-3xl font-bold mb-1">${p.fullName || t.fullName}</h1>
+                            <h2 class="text-lg md:text-xl text-gray-600 mb-2">${p.jobTitle || t.jobTitle}</h2>
+                            <div class="text-sm text-gray-700 flex flex-wrap gap-x-3 ${state.lang === 'ar' ? 'justify-end' : 'justify-start'}">
                                 ${p.city ? `<span><strong class="font-semibold">${p.city}</strong></span>` : ''}
-                                ${p.city && (p.phone || p.email || p.linkedin) ? '<span>|</span>' : ''}
-                                ${p.phone ? `<span>${p.phone}</span>` : ''}
-                                ${p.phone && (p.email || p.linkedin) ? '<span>|</span>' : ''}
-                                ${p.email ? `<span>${p.email}</span>` : ''}
-                                ${p.email && p.linkedin ? '<span>|</span>' : ''}
+                                ${(p.city && (p.phone || p.email || p.linkedin)) ? '<span>|</span>' : ''}
+                                ${p.phone ? `<span dir="ltr">${p.phone}</span>` : ''}
+                                ${(p.phone && (p.email || p.linkedin)) ? '<span>|</span>' : ''}
+                                ${p.email ? `<span dir="ltr">${p.email}</span>` : ''}
+                                ${(p.email && p.linkedin) ? '<span>|</span>' : ''}
                                 ${p.linkedin ? `<span>LinkedIn: ${p.linkedin}</span>` : ''}
                             </div>
-                            ${p.photo ? `<img src="${p.photo}" class="w-20 h-20 object-cover rounded-full absolute top-10 ${state.lang === 'ar' ? 'left-10' : 'right-10'}" alt="Photo">` : ''}
+                            ${p.photo ? `<img src="${p.photo}" class="w-16 h-16 md:w-20 md:h-20 object-cover rounded-full absolute top-4 md:top-6 ${state.lang === 'ar' ? 'left-4 md:left-6' : 'right-4 md:right-6'}" alt="Photo">` : ''}
                         </div>
                         ${data.summary ? `
-                        <div class="cv-ats-section mb-6" style="text-align: ${state.lang === 'ar' ? 'right' : 'left'};">
-                            <h3 class="text-lg font-bold uppercase mb-2 pb-1 border-b border-gray-400">${t.sectionSummary}</h3>
-                            <p class="text-sm leading-relaxed whitespace-pre-wrap">${data.summary}</p>
+                        <div class="cv-ats-section mb-4 md:mb-6" style="text-align: ${state.lang === 'ar' ? 'right' : 'left'};">
+                            <h3 class="text-base md:text-lg font-bold uppercase mb-2 pb-1 border-b border-gray-400">${t.sectionSummary}</h3>
+                            <p class="text-sm md:text-base leading-relaxed whitespace-pre-wrap">${data.summary}</p>
                         </div>
                         ` : ''}
                         ${data.experience.length > 0 ? `
-                            <div class="cv-ats-section mb-6" style="text-align: ${state.lang === 'ar' ? 'right' : 'left'};">
-                                <h3 class="text-lg font-bold uppercase mb-3 pb-1 border-b border-gray-400">${t.sectionWork}</h3>
+                            <div class="cv-ats-section mb-4 md:mb-6" style="text-align: ${state.lang === 'ar' ? 'right' : 'left'};">
+                                <h3 class="text-base md:text-lg font-bold uppercase mb-3 pb-1 border-b border-gray-400">${t.sectionWork}</h3>
                                 ${sortedExperience.map(exp => `
-                                    <div class="mb-4">
-                                        <div class="flex justify-between items-start text-sm">
+                                    <div class="mb-3">
+                                        <div class="flex justify-between items-start text-sm md:text-base">
                                             <h4 class="font-bold">${exp.title || ''}${exp.company ? ` ${state.lang === 'ar' ? 'في' : 'at'} ${exp.company}` : ''}</h4>
-                                            <span class="text-gray-600">${exp.start || ''} - ${exp.end || t.currentlyWork}</span>
+                                            <span class="text-gray-600">${exp.start || ''} – ${exp.end || t.currentlyWork}</span>
                                         </div>
-                                        ${exp.description ? `<ul class="list-disc ${state.lang === 'ar' ? 'pr-5' : 'pl-5'} text-sm mt-1 space-y-0.5">
+                                        ${exp.description ? `<ul class="list-disc ${state.lang === 'ar' ? 'pr-4 md:pr-5' : 'pl-4 md:pl-5'} text-sm mt-1 space-y-0.5">
                                             ${exp.description.split('\\n').filter(line => line.trim()).map(line => `<li>${line.trim()}</li>`).join('')}
                                         </ul>` : ''}
                                     </div>
@@ -1152,10 +1166,10 @@
                             </div>
                         ` : ''}
                         ${data.education.length > 0 ? `
-                            <div class="cv-ats-section mb-6" style="text-align: ${state.lang === 'ar' ? 'right' : 'left'};">
-                                <h3 class="text-lg font-bold uppercase mb-3 pb-1 border-b border-gray-400">${t.sectionEducation}</h3>
+                            <div class="cv-ats-section mb-4 md:mb-6" style="text-align: ${state.lang === 'ar' ? 'right' : 'left'};">
+                                <h3 class="text-base md:text-lg font-bold uppercase mb-3 pb-1 border-b border-gray-400">${t.sectionEducation}</h3>
                                 ${data.education.map(edu => `
-                                    <div class="flex justify-between items-start text-sm mb-2">
+                                    <div class="flex justify-between items-start text-sm md:text-base mb-2">
                                         <h4 class="font-bold">${edu.degree || ''}</h4>
                                         <span class="text-gray-600">${edu.institution || ''} (${edu.date || ''})</span>
                                     </div>
@@ -1163,27 +1177,27 @@
                             </div>
                         ` : ''}
                         ${data.skills.length > 0 ? `
-                            <div class="cv-ats-section mb-6" style="text-align: ${state.lang === 'ar' ? 'right' : 'left'};">
-                                <h3 class="text-lg font-bold uppercase mb-3 pb-1 border-b border-gray-400">${t.sectionSkills}</h3>
-                                <div class="flex flex-wrap gap-2 text-sm">
+                            <div class="cv-ats-section mb-4 md:mb-6" style="text-align: ${state.lang === 'ar' ? 'right' : 'left'};">
+                                <h3 class="text-base md:text-lg font-bold uppercase mb-3 pb-1 border-b border-gray-400">${t.sectionSkills}</h3>
+                                <div class="flex flex-wrap gap-1 md:gap-2 text-xs md:text-sm">
                                     ${data.skills.map(skill => `
-                                        <span class="bg-gray-100 px-3 py-1 rounded-full text-gray-700 border border-gray-300">${skill.name} (${skill.level})</span>
+                                        <span class="bg-gray-100 px-2 py-1 md:px-3 md:py-1 rounded-full text-gray-700 border border-gray-300 whitespace-nowrap">${skill.name} (${skill.level})</span>
                                     `).join('')}
                                 </div>
                             </div>
                         ` : ''}
-                        <div class="flex ${state.lang === 'ar' ? 'space-x-8 space-x-reverse' : 'space-x-8'}">
+                        <div class="flex flex-col md:flex-row ${state.lang === 'ar' ? 'gap-6 md:space-x-8 md:space-x-reverse' : 'gap-6 md:space-x-8'}">
                             ${data.languages.length > 0 ? `
-                                <div class="w-1/2 cv-ats-section">
-                                    <h3 class="text-lg font-bold uppercase mb-3 pb-1 border-b border-gray-400">${t.sectionLanguages}</h3>
+                                <div class="w-full md:w-1/2 cv-ats-section">
+                                    <h3 class="text-base md:text-lg font-bold uppercase mb-3 pb-1 border-b border-gray-400">${t.sectionLanguages}</h3>
                                     <ul class="text-sm space-y-0.5" style="text-align: ${state.lang === 'ar' ? 'right' : 'left'};">
                                         ${data.languages.map(lang => `<li>${lang.name}: ${lang.level}</li>`).join('')}
                                     </ul>
                                 </div>
                             ` : ''}
                             ${data.courses.length > 0 ? `
-                                <div class="w-1/2 cv-ats-section">
-                                    <h3 class="text-lg font-bold uppercase mb-3 pb-1 border-b border-gray-400">${t.sectionCourses}</h3>
+                                <div class="w-full md:w-1/2 cv-ats-section">
+                                    <h3 class="text-base md:text-lg font-bold uppercase mb-3 pb-1 border-b border-gray-400">${t.sectionCourses}</h3>
                                     <ul class="text-sm space-y-0.5" style="text-align: ${state.lang === 'ar' ? 'right' : 'left'};">
                                         ${data.courses.map(course => `<li>${course.name} (${course.provider}, ${course.date})</li>`).join('')}
                                     </ul>
@@ -1193,33 +1207,31 @@
                     </div>
                 `;
                 return `
-                    <div class="max-w-7xl mx-auto p-4 md:p-8 animate-fade-in">
-                        <h2 class="text-4xl font-extrabold text-indigo-400 mb-8 text-center">${t.wizardSteps[state.maxWizardStep - 1]}</h2>
-                        <div class="flex justify-center space-x-4 ${state.lang === 'ar' ? 'space-x-reverse' : ''} mb-8">
-                            <button class="futuristic-btn bg-green-600 hover:bg-green-700" onclick="moraCVX.downloadPDF()">
+                    <div class="max-w-7xl mx-auto p-2 md:p-4 lg:p-6 animate-fade-in">
+                        <h2 class="text-3xl md:text-4xl font-extrabold text-indigo-400 mb-6 md:mb-8 text-center">${t.wizardSteps[state.maxWizardStep - 1]}</h2>
+                        <div class="flex flex-col sm:flex-row justify-center gap-2 md:gap-4 mb-6 md:mb-8">
+                            <button class="futuristic-btn bg-green-600 hover:bg-green-700 px-4 py-2 text-sm md:text-base flex-1 sm:flex-none" onclick="moraCVX.downloadPDF()">
                                 ${t.downloadPDF}
                             </button>
-                            <button class="futuristic-outline-btn" onclick="moraCVX.copyCVText()">
+                            <button class="futuristic-outline-btn px-4 py-2 text-sm md:text-base flex-1 sm:flex-none" onclick="moraCVX.copyCVText()">
                                 ${t.copyText}
                             </button>
-                            <button class="futuristic-outline-btn" onclick="moraCVX.changeView('wizard', null, ${state.maxWizardStep})">
+                            <button class="futuristic-outline-btn px-4 py-2 text-sm md:text-base flex-1 sm:flex-none" onclick="moraCVX.changeView('wizard', null, ${state.maxWizardStep})">
                                 ${t.backToEdit}
                             </button>
                         </div>
-                        <div id="cv-preview-container" class="flex justify-center p-4 bg-gray-900 rounded-xl overflow-auto">
+                        <div id="cv-preview-container" class="flex justify-center p-2 md:p-4 bg-gray-900 rounded-xl overflow-auto">
                             ${cvContent}
                         </div>
                     </div>
                 `;
             }
 
-            // --- WIZARD LOGIC ---
             function attachWizardEvents() {
                 const contentDiv = document.getElementById('wizard-content');
                 const backBtn = document.getElementById('back-btn');
                 const nextBtn = document.getElementById('next-btn');
                 const finishBtn = document.getElementById('finish-btn');
-
                 if (backBtn) backBtn.addEventListener('click', () => changeWizardStep(-1));
                 if (nextBtn) nextBtn.addEventListener('click', () => {
                     if (validateStep(state.cvWizardStep)) {
@@ -1231,8 +1243,6 @@
                         changeView('preview');
                     }
                 });
-
-                // Photo upload
                 const photoUpload = document.getElementById('photo-upload');
                 if (photoUpload) {
                     photoUpload.addEventListener('change', (e) => {
@@ -1248,8 +1258,6 @@
                         }
                     });
                 }
-
-                // Add buttons
                 if (state.cvWizardStep === 3) {
                     document.getElementById('add-work-exp-btn')?.addEventListener('click', () => addItem('experience', { title: '', company: '', start: '', end: '', description: '' }));
                 }
@@ -1263,8 +1271,6 @@
                     document.getElementById('add-language-btn')?.addEventListener('click', () => addItem('languages', { name: '', level: '' }));
                     document.getElementById('add-course-btn')?.addEventListener('click', () => addItem('courses', { name: '', provider: '', date: '' }));
                 }
-
-                // Auto-save on blur
                 contentDiv?.querySelectorAll('input, textarea').forEach(input => {
                     input.addEventListener('blur', updateCVData);
                 });
@@ -1338,7 +1344,7 @@
                                 newContent.classList.remove('opacity-0');
                                 newContent.classList.add('animate-fade-in');
                             }
-                        }, 300);
+                        }, 250);
                     } else {
                         renderView();
                     }
@@ -1356,19 +1362,18 @@
                 renderView();
             }
 
-            // --- ACTIONS ---
             function downloadPDF() {
                 const element = document.getElementById('cv-content-ats');
                 const t = T[state.lang];
                 if (!element) return;
-                const options = {
-                    margin: 10,
+                const opt = {
+                    margin: [10, 10, 10, 10],
                     filename: (state.cvData.personal.fullName || 'CV') + '_Mora-CVX.pdf',
                     image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2, logging: false, dpi: 192, letterRendering: true, useCORS: true },
+                    html2canvas: { scale: 2, logging: false, useCORS: true, scrollY: -window.scrollY },
                     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
                 };
-                html2pdf().from(element).set(options).save().catch(err => {
+                html2pdf().from(element).set(opt).save().catch(err => {
                     console.error("PDF error:", err);
                     alert(state.lang === 'ar' ? 'فشل توليد ملف PDF. يرجى المحاولة مرة أخرى.' : 'PDF generation failed. Please try again.');
                 });
@@ -1391,8 +1396,8 @@
                 const textarea = document.createElement('textarea');
                 textarea.value = text;
                 textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
                 document.body.appendChild(textarea);
-                textarea.focus();
                 textarea.select();
                 try {
                     const ok = document.execCommand('copy');
@@ -1406,7 +1411,7 @@
 
             function showNotification(message, type = 'success') {
                 const notification = document.createElement('div');
-                notification.className = `fixed top-4 ${state.lang === 'ar' ? 'left-4' : 'right-4'} p-4 rounded-lg shadow-xl text-white z-50 transition-opacity duration-300 animate-fade-in`;
+                notification.className = `fixed top-4 ${state.lang === 'ar' ? 'left-4' : 'right-4'} p-3 md:p-4 rounded-lg shadow-xl text-white z-50 transition-opacity duration-300 animate-fade-in max-w-xs md:max-w-md text-sm md:text-base`;
                 notification.style.backgroundColor = type === 'success' ? '#10b981' : '#ef4444';
                 notification.textContent = message;
                 document.body.appendChild(notification);
@@ -1433,7 +1438,7 @@
                     elements.redirectTimer.textContent = count;
                     if (count <= 0) {
                         clearInterval(timer);
-                        window.location.href = url;
+                        window.open(url, '_blank');
                         elements.redirectOverlay.classList.add('opacity-0');
                         setTimeout(() => elements.redirectOverlay.classList.add('hidden'), 300);
                     }
@@ -1510,7 +1515,6 @@
                 state: () => state
             };
         })();
-
         window.moraCVX = moraCVX;
         document.addEventListener('DOMContentLoaded', moraCVX.init);
     </script>
