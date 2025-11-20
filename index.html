@@ -60,6 +60,21 @@
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- SheetJS for Excel -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <!-- docx for Word (IIFE version) -->
+    <script>
+        // Minimal docx generator (lightweight IIFE)
+        window.docx = (function() {
+            function generateDocx(htmlContent) {
+                const blob = new Blob([`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>CV</title></head><body>${htmlContent}</body></html>`], {
+                    type: "application/msword"
+                });
+                return blob;
+            }
+            return { generateDocx };
+        })();
+    </script>
     <style>
         :root {
             --primary-color: #6366f1;
@@ -142,7 +157,7 @@
         @media print {
             body * { visibility: hidden; }
             #cv-preview-container, #cv-preview-container * { visibility: visible; }
-            #cv-preview-container { position: absolute; left: 0; top: 0; width: 100%; color: black !important; background: white !important; padding: 20px; box-shadow: none; }
+            #cv-preview-container { position: absolute; left: 0; top: 0; width: 100%; color: black !important; background: white !important; padding: 15mm; box-shadow: none; }
             [dir="rtl"] .cv-ats-section { text-align: right !important; }
             [dir="ltr"] .cv-ats-section { text-align: left !important; }
         }
@@ -214,11 +229,14 @@
             min-height: 297mm;
             max-width: 95vw;
             overflow: hidden;
-            font-size: 12pt;
-            line-height: 1.5;
-            padding: 20mm 15mm;
+            font-size: 11pt;
+            line-height: 1.4;
+            padding: 15mm;
             margin: 0 auto;
             box-sizing: border-box;
+            background: white !important;
+            color: #000 !important;
+            font-family: 'Inter', Arial, sans-serif;
         }
         #cv-preview-container {
             width: 100%;
@@ -227,7 +245,6 @@
             overflow-x: auto;
             padding: 10px;
         }
-        /* ✅ Header Slim + Horizontal Scroll */
         #app-header {
             padding: 0.4rem 0.6rem !important;
             height: 48px;
@@ -249,9 +266,24 @@
             @apply text-xs md:text-sm font-medium text-gray-300 hover:text-indigo-400 transition-colors;
             min-width: max-content;
         }
+        .nav-separator {
+            color: #6b7280;
+            @apply text-xs;
+        }
         .app-title {
             font-size: 1.25rem;
             @apply md:text-xl;
+        }
+        .download-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin: 1rem 0;
+        }
+        .download-buttons button {
+            flex: 1;
+            min-width: 140px;
         }
     </style>
 </head>
@@ -425,8 +457,11 @@
                         <p>قد يتم تحديث سياسة الخصوصية هذه من وقت لآخر. سيتم نشر أي تغييرات على هذه الصفحة. يوصى بمراجعة هذه السياسة بشكل دوري.</p>
                         <p class="mt-8 text-sm text-gray-500">آخر تحديث: نوفمبر 2025</p>
                     `,
-                    downloadPDF: 'تحميل بصيغة PDF',
-                    copyText: 'نسخ نص السيرة الذاتية',
+                    downloadPDF: 'PDF',
+                    downloadExcel: 'Excel',
+                    downloadWord: 'Word',
+                    copyText: 'نسخ كنص',
+                    resetCV: 'إعادة تعيين السيرة',
                     backToEdit: 'العودة للتعديل',
                     sectionPersonal: 'بيانات التواصل',
                     sectionSummary: 'الملخص المهني',
@@ -522,9 +557,12 @@
                         <p>This Privacy Policy may be updated from time to time. Any changes will be posted on this page. You are advised to review this policy periodically.</p>
                         <p class="mt-8 text-sm text-gray-500">Last updated: November 2025</p>
                     `,
-                    downloadPDF: 'Download as PDF',
-                    copyText: 'Copy CV text',
-                    backToEdit: 'Back to edit',
+                    downloadPDF: 'PDF',
+                    downloadExcel: 'Excel',
+                    downloadWord: 'Word',
+                    copyText: 'Copy Text',
+                    resetCV: 'Reset CV',
+                    backToEdit: 'Back to Edit',
                     sectionPersonal: 'Contact Information',
                     sectionSummary: 'Professional Summary',
                     sectionWork: 'Work Experience',
@@ -618,10 +656,11 @@
                     { name: t.navPolicy, view: 'policy' },
                     { name: t.navContact, view: 'contact' },
                 ];
-                elements.navContainer.innerHTML = navLinks.map(link => `
+                elements.navContainer.innerHTML = navLinks.map((link, i) => `
                     <a href="#" data-view="${link.view}" class="whitespace-nowrap" onclick="moraCVX.changeView('${link.view}', event)">
                         ${link.name}
                     </a>
+                    ${i < navLinks.length - 1 ? `<span class="nav-separator">·</span>` : ''}
                 `).join('');
             }
             function renderView() {
@@ -1101,82 +1140,82 @@
                 const t = T[state.lang];
                 const data = state.cvData;
                 const p = data.personal;
-                const sortedExperience = [...data.experience].sort((a, b) => new Date(b.start) - new Date(a.start));
+                const sortedExperience = [...data.experience].sort((a, b) => new Date(b.start || '1970-01-01') - new Date(a.start || '1970-01-01'));
                 const cvContent = `
-                    <div id="cv-content-ats" class="p-4 md:p-6 bg-white text-gray-800 shadow-xl rounded-lg relative print:shadow-none" style="width: 210mm; min-height: 297mm; direction: ${state.lang === 'ar' ? 'rtl' : 'ltr'}; font-family: 'Inter', sans-serif; font-size: 12pt; line-height: 1.5; margin: 0 auto;">
-                        <div style="margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #4b5563; text-align: ${state.lang === 'ar' ? 'right' : 'left'};">
-                            <h1 style="font-size: 24pt; font-weight: bold; margin: 0;">${p.fullName || t.fullName}</h1>
-                            <h2 style="font-size: 16pt; color: #4b5563; margin: 5px 0;">${p.jobTitle || t.jobTitle}</h2>
-                            <div style="font-size: 12pt; color: #374151; display: flex; flex-wrap: wrap; gap: 10px; justify-content: ${state.lang === 'ar' ? 'flex-end' : 'flex-start'};">
-                                ${p.city ? `<span style="font-weight: bold;">${p.city}</span>` : ''}
-                                ${(p.city && (p.phone || p.email || p.linkedin)) ? '<span style="color: #9ca3af;">|</span>' : ''}
-                                ${p.phone ? `<span dir="ltr">${p.phone}</span>` : ''}
-                                ${(p.phone && (p.email || p.linkedin)) ? '<span style="color: #9ca3af;">|</span>' : ''}
-                                ${p.email ? `<span dir="ltr">${p.email}</span>` : ''}
-                                ${(p.email && p.linkedin) ? '<span style="color: #9ca3af;">|</span>' : ''}
-                                ${p.linkedin ? `<span>LinkedIn: ${p.linkedin}</span>` : ''}
+                    <div id="cv-content-ats" class="cv-ats-section" style="direction: ${state.lang === 'ar' ? 'rtl' : 'ltr'};">
+                        <div style="margin-bottom: 14px; padding-bottom: 6px; border-bottom: 1px solid #333; text-align: ${state.lang === 'ar' ? 'right' : 'left'};">
+                            <h1 style="font-size: 18pt; font-weight: bold; margin: 0; line-height: 1.2;">${p.fullName || t.fullName}</h1>
+                            <h2 style="font-size: 12pt; color: #444; margin: 3px 0; font-weight: normal;">${p.jobTitle || ''}</h2>
+                            <div style="font-size: 10pt; color: #222; display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; justify-content: ${state.lang === 'ar' ? 'flex-end' : 'flex-start'};">
+                                ${(p.city || p.phone || p.email || p.linkedin) ? `
+                                    ${(p.city ? `<span>${p.city}</span>` : '')}
+                                    ${((p.city && (p.phone || p.email || p.linkedin)) ? '<span style="color:#888;">|</span>' : '')}
+                                    ${(p.phone ? `<span dir="ltr">${p.phone}</span>` : '')}
+                                    ${((p.phone && (p.email || p.linkedin)) ? '<span style="color:#888;">|</span>' : '')}
+                                    ${(p.email ? `<span dir="ltr">${p.email}</span>` : '')}
+                                    ${((p.email && p.linkedin) ? '<span style="color:#888;">|</span>' : '')}
+                                    ${(p.linkedin ? `<span>LinkedIn: ${p.linkedin}</span>` : '')}
+                                ` : ''}
                             </div>
-                            ${p.photo ? `<img src="${p.photo}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; position: absolute; top: 20px; ${state.lang === 'ar' ? 'left' : 'right'}: 20px;" alt="Photo">` : ''}
+                            ${p.photo ? `<img src="${p.photo}" style="width:40px; height:40px; object-fit:cover; border-radius:50%; position:absolute; top:15mm; ${state.lang === 'ar' ? 'left' : 'right'}:15mm;" alt="Photo">` : ''}
                         </div>
                         ${data.summary ? `
-                        <div style="margin-bottom: 20px; text-align: ${state.lang === 'ar' ? 'right' : 'left'};">
-                            <h3 style="font-size: 14pt; font-weight: bold; text-transform: uppercase; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid #9ca3af;">${t.sectionSummary}</h3>
-                            <p style="white-space: pre-wrap; line-height: 1.5;">${data.summary}</p>
+                        <div style="margin: 12px 0;">
+                            <h3 style="font-size: 11pt; font-weight: bold; margin-bottom: 6px; padding-bottom: 3px; border-bottom: 1px solid #888;">${t.sectionSummary}</h3>
+                            <p style="font-size:10pt; line-height:1.4; white-space:pre-wrap;">${data.summary}</p>
                         </div>
                         ` : ''}
                         ${data.experience.length > 0 ? `
-                            <div style="margin-bottom: 20px; text-align: ${state.lang === 'ar' ? 'right' : 'left'};">
-                                <h3 style="font-size: 14pt; font-weight: bold; text-transform: uppercase; margin-bottom: 12px; padding-bottom: 4px; border-bottom: 1px solid #9ca3af;">${t.sectionWork}</h3>
-                                ${sortedExperience.map(exp => `
-                                    <div style="margin-bottom: 12px;">
-                                        <div style="display: flex; justify-content: space-between; font-size: 12pt; margin-bottom: 4px;">
-                                            <strong>${exp.title || ''}${exp.company ? ` ${state.lang === 'ar' ? 'في' : 'at'} ${exp.company}` : ''}</strong>
-                                            <span style="color: #4b5563;">${exp.start || ''} – ${exp.end || t.currentlyWork}</span>
-                                        </div>
-                                        ${exp.description ? `<ul style="padding-${state.lang === 'ar' ? 'right' : 'left'}: 20px; margin-top: 4px; list-style-type: disc; font-size: 11pt; line-height: 1.4;">
-                                            ${exp.description.split('\\n').filter(line => line.trim()).map(line => `<li>${line.trim()}</li>`).join('')}
-                                        </ul>` : ''}
+                        <div style="margin: 12px 0;">
+                            <h3 style="font-size: 11pt; font-weight: bold; margin-bottom: 6px; padding-bottom: 3px; border-bottom: 1px solid #888;">${t.sectionWork}</h3>
+                            ${sortedExperience.map(exp => `
+                                <div style="margin-bottom: 8px;">
+                                    <div style="display:flex; justify-content:space-between; font-size:10pt; font-weight:bold; margin-bottom:2px;">
+                                        <span>${exp.title || ''}${exp.company ? ` ${state.lang === 'ar' ? 'في' : 'at'} ${exp.company}` : ''}</span>
+                                        <span style="color:#444;">${exp.start || ''} – ${exp.end || t.currentlyWork}</span>
                                     </div>
-                                `).join('')}
-                            </div>
+                                    ${exp.description ? `<ul style="padding-${state.lang === 'ar' ? 'right' : 'left'}:12px; margin-top:2px; list-style-type:disc; font-size:9pt; line-height:1.35;">
+                                        ${exp.description.split('\n').filter(line => line.trim()).map(line => `<li>${line.trim()}</li>`).join('')}
+                                    </ul>` : ''}
+                                </div>
+                            `).join('')}
+                        </div>
                         ` : ''}
                         ${data.education.length > 0 ? `
-                            <div style="margin-bottom: 20px; text-align: ${state.lang === 'ar' ? 'right' : 'left'};">
-                                <h3 style="font-size: 14pt; font-weight: bold; text-transform: uppercase; margin-bottom: 12px; padding-bottom: 4px; border-bottom: 1px solid #9ca3af;">${t.sectionEducation}</h3>
-                                ${data.education.map(edu => `
-                                    <div style="display: flex; justify-content: space-between; font-size: 12pt; margin-bottom: 8px;">
-                                        <strong>${edu.degree || ''}</strong>
-                                        <span style="color: #4b5563;">${edu.institution || ''}${edu.date ? ` (${edu.date})` : ''}</span>
-                                    </div>
-                                `).join('')}
-                            </div>
+                        <div style="margin: 12px 0;">
+                            <h3 style="font-size: 11pt; font-weight: bold; margin-bottom: 6px; padding-bottom: 3px; border-bottom: 1px solid #888;">${t.sectionEducation}</h3>
+                            ${data.education.map(edu => `
+                                <div style="display:flex; justify-content:space-between; font-size:10pt; margin-bottom:4px;">
+                                    <strong>${edu.degree || ''}</strong>
+                                    <span style="color:#444;">${edu.institution || ''}${edu.date ? ` (${edu.date})` : ''}</span>
+                                </div>
+                            `).join('')}
+                        </div>
                         ` : ''}
                         ${data.skills.length > 0 ? `
-                            <div style="margin-bottom: 20px; text-align: ${state.lang === 'ar' ? 'right' : 'left'};">
-                                <h3 style="font-size: 14pt; font-weight: bold; text-transform: uppercase; margin-bottom: 12px; padding-bottom: 4px; border-bottom: 1px solid #9ca3af;">${t.sectionSkills}</h3>
-                                <div style="display: flex; flex-wrap: wrap; gap: 6px; font-size: 11pt;">
-                                    ${data.skills.map(skill => `
-                                        <span style="background-color: #f3f4f6; color: #374151; padding: 4px 10px; border-radius: 20px; white-space: nowrap;">${skill.name} (${skill.level})</span>
-                                    `).join('')}
-                                </div>
+                        <div style="margin: 12px 0;">
+                            <h3 style="font-size: 11pt; font-weight: bold; margin-bottom: 6px; padding-bottom: 3px; border-bottom: 1px solid #888;">${t.sectionSkills}</h3>
+                            <div style="display:flex; flex-wrap:wrap; gap:4px; font-size:9pt;">
+                                ${data.skills.map(skill => `<span style="background:#f0f0f0; color:#000; padding:2px 6px; border-radius:12px;">${skill.name}${skill.level ? ` (${skill.level})` : ''}</span>`).join('')}
                             </div>
+                        </div>
                         ` : ''}
-                        <div style="display: flex; flex-direction: column; ${state.lang === 'ar' ? 'gap: 16px;' : 'gap: 16px;'} ${state.lang === 'ar' ? 'margin-top: 16px;' : 'margin-top: 16px;'}">
+                        <div style="display:flex; ${state.lang === 'ar' ? 'gap:12px;' : 'gap:12px;'} margin-top:12px;">
                             ${data.languages.length > 0 ? `
-                                <div style="flex: 1;">
-                                    <h3 style="font-size: 14pt; font-weight: bold; text-transform: uppercase; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid #9ca3af;">${t.sectionLanguages}</h3>
-                                    <ul style="list-style-type: none; padding: 0; font-size: 12pt; line-height: 1.5; text-align: ${state.lang === 'ar' ? 'right' : 'left'};">
-                                        ${data.languages.map(lang => `<li>${lang.name}: ${lang.level}</li>`).join('')}
-                                    </ul>
-                                </div>
+                            <div style="flex:1; min-width:150px;">
+                                <h3 style="font-size: 11pt; font-weight: bold; margin-bottom: 4px; padding-bottom: 3px; border-bottom: 1px solid #888;">${t.sectionLanguages}</h3>
+                                <ul style="list-style:none; padding:0; font-size:10pt; line-height:1.35;">
+                                    ${data.languages.map(lang => `<li>${lang.name}${lang.level ? `: ${lang.level}` : ''}</li>`).join('')}
+                                </ul>
+                            </div>
                             ` : ''}
                             ${data.courses.length > 0 ? `
-                                <div style="flex: 1;">
-                                    <h3 style="font-size: 14pt; font-weight: bold; text-transform: uppercase; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid #9ca3af;">${t.sectionCourses}</h3>
-                                    <ul style="list-style-type: none; padding: 0; font-size: 12pt; line-height: 1.5; text-align: ${state.lang === 'ar' ? 'right' : 'left'};">
-                                        ${data.courses.map(course => `<li>${course.name} (${course.provider}${course.date ? `, ${course.date}` : ''})</li>`).join('')}
-                                    </ul>
-                                </div>
+                            <div style="flex:1; min-width:150px;">
+                                <h3 style="font-size: 11pt; font-weight: bold; margin-bottom: 4px; padding-bottom: 3px; border-bottom: 1px solid #888;">${t.sectionCourses}</h3>
+                                <ul style="list-style:none; padding:0; font-size:10pt; line-height:1.35;">
+                                    ${data.courses.map(course => `<li>${course.name}${course.provider ? ` (${course.provider})` : ''}${course.date ? `, ${course.date}` : ''}</li>`).join('')}
+                                </ul>
+                            </div>
                             ` : ''}
                         </div>
                     </div>
@@ -1184,18 +1223,27 @@
                 return `
                     <div class="max-w-7xl mx-auto p-2 md:p-4 lg:p-6 animate-fade-in">
                         <h2 class="text-3xl md:text-4xl font-extrabold text-indigo-400 mb-6 md:mb-8 text-center">${t.wizardSteps[state.maxWizardStep - 1]}</h2>
-                        <div class="flex flex-col sm:flex-row justify-center gap-2 md:gap-4 mb-6 md:mb-8">
-                            <button class="futuristic-btn bg-green-600 hover:bg-green-700 px-4 py-2 text-sm md:text-base flex-1 sm:flex-none" onclick="moraCVX.downloadPDF()">
+                        <div class="download-buttons">
+                            <button class="futuristic-btn bg-green-600 hover:bg-green-700 px-4 py-2 text-sm md:text-base" onclick="moraCVX.downloadPDF()">
                                 ${t.downloadPDF}
                             </button>
-                            <button class="futuristic-outline-btn px-4 py-2 text-sm md:text-base flex-1 sm:flex-none" onclick="moraCVX.copyCVText()">
+                            <button class="futuristic-btn bg-blue-600 hover:bg-blue-700 px-4 py-2 text-sm md:text-base" onclick="moraCVX.downloadExcel()">
+                                ${t.downloadExcel}
+                            </button>
+                            <button class="futuristic-btn bg-purple-600 hover:bg-purple-700 px-4 py-2 text-sm md:text-base" onclick="moraCVX.downloadWord()">
+                                ${t.downloadWord}
+                            </button>
+                            <button class="futuristic-outline-btn px-4 py-2 text-sm md:text-base" onclick="moraCVX.copyCVText()">
                                 ${t.copyText}
                             </button>
-                            <button class="futuristic-outline-btn px-4 py-2 text-sm md:text-base flex-1 sm:flex-none" onclick="moraCVX.changeView('wizard', null, ${state.maxWizardStep})">
-                                ${t.backToEdit}
+                            <button class="futuristic-outline-btn bg-red-500/20 text-red-400 hover:bg-red-500/30 px-4 py-2 text-sm md:text-base" onclick="moraCVX.resetCV()">
+                                ${t.resetCV}
                             </button>
                         </div>
-                        <div id="cv-preview-container" class="flex justify-center p-2 md:p-4 bg-gray-900 rounded-xl overflow-auto">
+                        <button class="futuristic-outline-btn mt-2 md:mt-4 px-4 py-2 text-sm md:text-base" onclick="moraCVX.changeView('wizard', null, ${state.maxWizardStep})">
+                            ${t.backToEdit}
+                        </button>
+                        <div id="cv-preview-container" class="flex justify-center p-2 md:p-4 bg-gray-900 rounded-xl overflow-auto mt-4">
                             ${cvContent}
                         </div>
                     </div>
@@ -1347,6 +1395,35 @@
                     alert(state.lang === 'ar' ? 'فشل توليد ملف PDF. يرجى المحاولة مرة أخرى.' : 'PDF generation failed. Please try again.');
                 });
             }
+            function downloadExcel() {
+                const ws = XLSX.utils.json_to_sheet([
+                    { "Full Name": state.cvData.personal.fullName || '' },
+                    { "Job Title": state.cvData.personal.jobTitle || '' },
+                    { "Phone": state.cvData.personal.phone || '' },
+                    { "Email": state.cvData.personal.email || '' },
+                    { "City": state.cvData.personal.city || '' },
+                    { "LinkedIn": state.cvData.personal.linkedin || '' },
+                    { "Summary": state.cvData.summary || '' },
+                    { "Experience": state.cvData.experience.map(e => `${e.title} at ${e.company} (${e.start} - ${e.end})`).join('; ') },
+                    { "Education": state.cvData.education.map(e => `${e.degree} at ${e.institution} (${e.date})`).join('; ') },
+                    { "Skills": state.cvData.skills.map(s => `${s.name} (${s.level})`).join(', ') },
+                    { "Languages": state.cvData.languages.map(l => `${l.name}: ${l.level}`).join(', ') },
+                    { "Courses": state.cvData.courses.map(c => `${c.name} (${c.provider}, ${c.date})`).join('; ') }
+                ]);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "CV");
+                XLSX.writeFile(wb, (state.cvData.personal.fullName || 'CV') + '_Mora-CVX.xlsx');
+            }
+            function downloadWord() {
+                const element = document.getElementById('cv-content-ats');
+                if (!element) return;
+                const htmlContent = element.outerHTML;
+                const blob = window.docx.generateDocx(htmlContent);
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = (state.cvData.personal.fullName || 'CV') + '_Mora-CVX.doc';
+                link.click();
+            }
             function copyCVText() {
                 const element = document.getElementById('cv-content-ats');
                 if (!element) return;
@@ -1373,6 +1450,26 @@
                     showNotification(state.lang === 'ar' ? 'فشل النسخ (يرجى المحاولة يدويًا).' : 'Copy failed (please try manually).', 'error');
                 } finally {
                     document.body.removeChild(textarea);
+                }
+            }
+            function resetCV() {
+                if (confirm(state.lang === 'ar' ? 'هل أنت متأكد من حذف السيرة الذاتية بالكامل؟ لا يمكن التراجع عن هذا الإجراء.' : 'Are you sure you want to delete your entire CV? This action cannot be undone.')) {
+                    state.cvData = {
+                        personal: {},
+                        summary: '',
+                        experience: [],
+                        education: [],
+                        skills: [],
+                        languages: [],
+                        courses: [],
+                    };
+                    localStorage.removeItem(STORAGE_KEY_CV);
+                    if (state.db && state.userId && window.firebaseImports) {
+                        const cvRef = window.firebaseImports.doc(state.db, `artifacts/${window.__app_id || 'default-mora-cvx'}/users/${state.userId}/cvs/main_cv`);
+                        window.firebaseImports.setDoc(cvRef, { cvData: null, lastUpdated: new Date() });
+                    }
+                    renderView();
+                    showNotification(state.lang === 'ar' ? 'تمت إعادة تعيين السيرة الذاتية.' : 'CV has been reset.');
                 }
             }
             function showNotification(message, type = 'success') {
@@ -1457,7 +1554,10 @@
                 addItem,
                 removeItem,
                 downloadPDF,
+                downloadExcel,
+                downloadWord,
                 copyCVText,
+                resetCV,
                 showRedirectTimer,
                 setFirebaseReady,
                 state: () => state
