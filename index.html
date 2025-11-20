@@ -173,8 +173,7 @@
         .input-error-label {
             color: #ef4444 !important;
         }
-
-        /* ✅ الخلفية المتحركة تظهر فقط في صفحة اختيار اللغة */
+        /* خلفية Three.js */
         #three-canvas {
             position: fixed;
             top: 0;
@@ -182,13 +181,11 @@
             width: 100%;
             height: 100%;
             z-index: -1;
-            display: none; /* مخفية افتراضيًا */
+            display: none;
         }
         .lang-select-active #three-canvas {
             display: block;
         }
-
-        /* Responsive tweaks */
         .step-title {
             font-size: 1.25rem;
             @apply md:text-2xl;
@@ -213,17 +210,37 @@
             grid-template-columns: 1fr;
             @apply sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4;
         }
+        /* ✅ CV المعروض للطباعة/المعاينة - بدون فراغات زائدة، منسق بصرًا، ومتوافق مع الشركات */
         #cv-content-ats {
             width: 210mm;
             min-height: 297mm;
             max-width: 95vw;
             overflow: hidden;
+            font-size: 12px;
+            line-height: 1.4;
+            padding: 20mm 15mm;
+            margin: 0 auto;
+            box-sizing: border-box;
         }
         #cv-preview-container {
             width: 100%;
             display: flex;
             justify-content: center;
             overflow-x: auto;
+            padding: 10px;
+        }
+        header.glass-card {
+            padding: 0.75rem 1rem !important;
+            @apply md:px-4 md:py-3;
+        }
+        .header-nav-links {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            @apply md:gap-4 lg:gap-5;
+        }
+        .header-nav-links a {
+            @apply text-sm md:text-base font-medium text-gray-300 hover:text-indigo-400 transition-colors;
         }
     </style>
 </head>
@@ -239,36 +256,21 @@
             تصميم عمرو لطفي
         </p>
     </div>
-
     <!-- Redirect Overlay -->
     <div id="redirect-overlay" class="fixed inset-0 bg-slate-950/90 z-[60] hidden flex-col items-center justify-center transition-opacity duration-300 opacity-0">
         <h2 class="text-3xl md:text-4xl font-extrabold text-indigo-400 mb-4 dev-text-3d" id="redirect-message"></h2>
         <p class="text-5xl md:text-6xl font-bold text-white mb-6 dev-text-3d" id="redirect-timer"></p>
         <p class="text-base md:text-lg text-gray-400 dev-text-3d">تطوير عمرو لطفي</p>
     </div>
-
     <!-- App -->
     <div id="app-container" class="hidden min-h-screen">
-        <header id="app-header" class="glass-card sticky top-0 z-40 p-3 md:p-4 flex justify-between items-center transition-all duration-300">
-            <h1 class="text-xl md:text-3xl font-extrabold text-indigo-400 dev-text-3d truncate">Mora – CVX</h1>
-            <nav id="nav-links" class="hidden md:flex flex-wrap gap-x-3 md:gap-x-5 text-sm md:text-lg"></nav>
-            <button id="mobile-menu-btn" class="text-white md:hidden">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="18" x2="20" y2="18"></line></svg>
-            </button>
-            <div id="lang-toggle-container" class="hidden md:block"></div>
+        <header id="app-header" class="glass-card sticky top-0 z-40 flex justify-between items-center transition-all duration-300">
+            <h1 class="text-xl md:text-2xl font-extrabold text-indigo-400 dev-text-3d truncate">Mora – CVX</h1>
+            <nav class="header-nav-links" id="nav-links"></nav>
         </header>
         <main id="main-view" class="p-2 md:p-4 lg:p-8"></main>
-        <div id="mobile-menu-overlay" class="fixed inset-0 bg-slate-950/90 z-40 hidden flex-col items-center justify-center transition-opacity duration-300 opacity-0">
-            <button id="close-mobile-menu" class="absolute top-4 right-4 text-white">
-                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-            </button>
-            <nav id="mobile-nav-links" class="flex flex-col space-y-4 text-lg md:text-2xl px-4"></nav>
-        </div>
-
-        <!-- Canvas للخلفية (يُنشَأ ديناميكيًا فقط عند الحاجة) -->
         <canvas id="three-canvas"></canvas>
     </div>
-
     <script>
         const moraCVX = (() => {
             const STORAGE_KEY_SPLASH = 'mora-cvx-splash-shown';
@@ -292,7 +294,6 @@
                 db: null,
                 userId: null,
             };
-
             const elements = {
                 body: document.getElementById('app-body'),
                 splashScreen: document.getElementById('splash-screen'),
@@ -300,18 +301,11 @@
                 mainView: document.getElementById('main-view'),
                 header: document.getElementById('app-header'),
                 navLinks: document.getElementById('nav-links'),
-                mobileNavLinks: document.getElementById('mobile-nav-links'),
-                langToggleContainer: document.getElementById('lang-toggle-container'),
-                mobileMenuBtn: document.getElementById('mobile-menu-btn'),
-                mobileMenuOverlay: document.getElementById('mobile-menu-overlay'),
-                closeMobileMenu: document.getElementById('close-mobile-menu'),
-                devCredit: document.getElementById('dev-credit'),
+                threeCanvas: document.getElementById('three-canvas'),
                 redirectOverlay: document.getElementById('redirect-overlay'),
                 redirectMessage: document.getElementById('redirect-message'),
                 redirectTimer: document.getElementById('redirect-timer'),
-                threeCanvas: document.getElementById('three-canvas'),
             };
-
             function setFirebaseReady(dbInstance, authInstance, uid) {
                 state.db = dbInstance;
                 state.userId = uid;
@@ -331,7 +325,6 @@
                     });
                 }
             }
-
             async function saveCVDataToFirestore() {
                 if (!state.db || !state.userId || !window.firebaseImports) {
                     localStorage.setItem(STORAGE_KEY_CV, JSON.stringify(state.cvData));
@@ -346,7 +339,6 @@
                     console.error("Firestore save error:", error);
                 }
             }
-
             const T = {
                 ar: {
                     appName: 'Mora – CVX',
@@ -543,7 +535,6 @@
                     educationGradDate: 'Graduation Date (Year/Month)',
                 }
             };
-
             function validateStep(step) {
                 const t = T[state.lang];
                 let valid = true;
@@ -601,7 +592,6 @@
                 }
                 return valid;
             }
-
             function updateDirection() {
                 const dir = state.lang === 'ar' ? 'rtl' : 'ltr';
                 elements.body.setAttribute('dir', dir);
@@ -609,52 +599,33 @@
                 document.querySelectorAll('.text-start-lang').forEach(el => el.style.textAlign = dir === 'rtl' ? 'right' : 'left');
                 document.querySelectorAll('.text-end-lang').forEach(el => el.style.textAlign = dir === 'rtl' ? 'left' : 'right');
             }
-
             function renderHeaderAndNav() {
                 const t = T[state.lang];
-                const links = [
-                    { name: t.navHome, view: 'landing' },
+                const navLinks = [
                     { name: t.navPreview, view: 'preview' },
                     { name: t.navPolicy, view: 'policy' },
                     { name: t.navContact, view: 'contact' },
                 ];
-                elements.navLinks.innerHTML = links.map(link => `
-                    <a href="#" data-view="${link.view}" class="text-gray-300 hover:text-indigo-400 transition-colors duration-200 text-sm md:text-lg font-medium whitespace-nowrap" onclick="moraCVX.changeView('${link.view}', event)">
-                        ${link.name}
-                    </a>
-                `).join('<span class="text-gray-600 mx-1 md:mx-2">•</span>');
-                elements.mobileNavLinks.innerHTML = links.map(link => `
-                    <a href="#" data-view="${link.view}" class="text-gray-100 hover:text-indigo-400 transition-colors duration-200 text-lg md:text-xl font-medium py-2" onclick="moraCVX.changeView('${link.view}', event); moraCVX.toggleMobileMenu(false);">
+                elements.navLinks.innerHTML = navLinks.map(link => `
+                    <a href="#" data-view="${link.view}" class="whitespace-nowrap" onclick="moraCVX.changeView('${link.view}', event)">
                         ${link.name}
                     </a>
                 `).join('');
-                const otherLang = state.lang === 'ar' ? 'en' : 'ar';
-                const otherLangText = state.lang === 'ar' ? 'English' : 'العربية';
-                elements.langToggleContainer.innerHTML = `
-                    <button class="futuristic-outline-btn text-xs md:text-sm px-3 py-1 md:px-4 md:py-2" onclick="moraCVX.changeLanguage('${otherLang}')">
-                        ${t.navChangeLang} (${otherLangText})
-                    </button>
-                `;
             }
-
             function renderView() {
                 elements.mainView.innerHTML = '';
                 elements.appContainer.classList.remove('hidden');
-
-                // ✅ إدارة ظهور/إخفاء الخلفية المتحركة
                 if (state.view === 'langSelect') {
                     elements.body.classList.add('lang-select-active');
                 } else {
                     elements.body.classList.remove('lang-select-active');
                 }
-
                 if (state.view !== 'splash' && state.view !== 'langSelect') {
                     elements.header.classList.remove('hidden');
                     renderHeaderAndNav();
                 } else {
                     elements.header.classList.add('hidden');
                 }
-
                 switch (state.view) {
                     case 'langSelect':
                         elements.mainView.innerHTML = renderLanguageSelect();
@@ -684,10 +655,8 @@
                 }
                 updateDirection();
             }
-
             let scene, camera, renderer, particles;
             let animationId = null;
-
             function initThreeJSBackground() {
                 if (state.view !== 'langSelect') return;
                 if (renderer) renderer.dispose();
@@ -764,7 +733,6 @@
                 };
                 window.addEventListener('resize', resize);
             }
-
             function destroyThreeJS() {
                 if (animationId) {
                     cancelAnimationFrame(animationId);
@@ -774,9 +742,7 @@
                     renderer.dispose();
                     renderer = null;
                 }
-                // لا نحذف العنصر، فقط نوقف العرض
             }
-
             function renderLanguageSelect() {
                 const t_ar = T.ar;
                 const t_en = T.en;
@@ -795,7 +761,6 @@
                     </div>
                 `;
             }
-
             function renderLandingPage() {
                 const t = T[state.lang];
                 return `
@@ -828,7 +793,6 @@
                     </div>
                 `;
             }
-
             function renderInput(label, id, value, type = 'text', placeholder = '', isRequired = false) {
                 return `
                     <div class="mb-3 md:mb-4">
@@ -844,7 +808,6 @@
                     </div>
                 `;
             }
-
             function renderPhotoUpload(t) {
                 const hasPhoto = state.cvData.personal.photo;
                 return `
@@ -862,7 +825,6 @@
                     </div>
                 `;
             }
-
             function renderCVWizard() {
                 const t = T[state.lang];
                 const currentStep = state.cvWizardStep;
@@ -895,7 +857,6 @@
                     </div>
                 `;
             }
-
             function renderWizardStepContent(step, t) {
                 const data = state.cvData;
                 let html = '';
@@ -1006,7 +967,6 @@
                 }
                 return html;
             }
-
             function renderWorkExpItem(exp, index, t) {
                 return `
                     <div id="work-exp-item-${index}" class="glass-card p-3 md:p-4 rounded-lg relative">
@@ -1029,7 +989,6 @@
                     </div>
                 `;
             }
-
             function renderEducationItem(edu, index, t) {
                 return `
                     <div id="edu-item-${index}" class="glass-card p-3 md:p-4 rounded-lg relative">
@@ -1047,7 +1006,6 @@
                     </div>
                 `;
             }
-
             function renderSkillItem(skill, index, t) {
                 return `
                     <div id="skill-item-${index}" class="flex flex-col sm:flex-row items-start sm:items-center gap-2 glass-card p-2 md:p-3 rounded-lg">
@@ -1059,7 +1017,6 @@
                     </div>
                 `;
             }
-
             function renderLanguageItem(lang, index, t) {
                 return `
                     <div id="lang-item-${index}" class="flex flex-col sm:flex-row items-start sm:items-center gap-2 glass-card p-2 md:p-3 rounded-lg">
@@ -1071,7 +1028,6 @@
                     </div>
                 `;
             }
-
             function renderCourseItem(course, index, t) {
                 return `
                     <div id="course-item-${index}" class="glass-card p-3 md:p-4 rounded-lg relative">
@@ -1089,7 +1045,6 @@
                     </div>
                 `;
             }
-
             function renderContactPage() {
                 const t = T[state.lang];
                 const contacts = [
@@ -1120,7 +1075,6 @@
                     </div>
                 `;
             }
-
             function renderPolicyPage() {
                 const t = T[state.lang];
                 return `
@@ -1132,85 +1086,84 @@
                     </div>
                 `;
             }
-
             function renderCVPreview() {
                 const t = T[state.lang];
                 const data = state.cvData;
                 const p = data.personal;
                 const sortedExperience = [...data.experience].sort((a, b) => new Date(b.start) - new Date(a.start));
                 const cvContent = `
-                    <div id="cv-content-ats" class="p-4 md:p-6 bg-white text-gray-800 shadow-xl rounded-lg relative print:shadow-none" style="width: 210mm; min-height: 297mm; direction: ${state.lang === 'ar' ? 'rtl' : 'ltr'}; font-family: 'Inter', sans-serif;">
-                        <div class="mb-4 pb-2 border-b-2 border-gray-600 cv-ats-section text-${state.lang === 'ar' ? 'right' : 'left'}">
-                            <h1 class="text-2xl md:text-3xl font-bold mb-1">${p.fullName || t.fullName}</h1>
-                            <h2 class="text-lg md:text-xl text-gray-600 mb-2">${p.jobTitle || t.jobTitle}</h2>
-                            <div class="text-sm text-gray-700 flex flex-wrap gap-x-3 ${state.lang === 'ar' ? 'justify-end' : 'justify-start'}">
-                                ${p.city ? `<span><strong class="font-semibold">${p.city}</strong></span>` : ''}
-                                ${(p.city && (p.phone || p.email || p.linkedin)) ? '<span>|</span>' : ''}
+                    <div id="cv-content-ats" class="p-4 md:p-6 bg-white text-gray-800 shadow-xl rounded-lg relative print:shadow-none" style="width: 210mm; min-height: 297mm; direction: ${state.lang === 'ar' ? 'rtl' : 'ltr'}; font-family: 'Inter', sans-serif; font-size: 12pt; line-height: 1.5; margin: 0 auto;">
+                        <div style="margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #4b5563; text-align: ${state.lang === 'ar' ? 'right' : 'left'};">
+                            <h1 style="font-size: 24pt; font-weight: bold; margin: 0;">${p.fullName || t.fullName}</h1>
+                            <h2 style="font-size: 16pt; color: #4b5563; margin: 5px 0;">${p.jobTitle || t.jobTitle}</h2>
+                            <div style="font-size: 12pt; color: #374151; display: flex; flex-wrap: wrap; gap: 10px; justify-content: ${state.lang === 'ar' ? 'flex-end' : 'flex-start'};">
+                                ${p.city ? `<span style="font-weight: bold;">${p.city}</span>` : ''}
+                                ${(p.city && (p.phone || p.email || p.linkedin)) ? '<span style="color: #9ca3af;">|</span>' : ''}
                                 ${p.phone ? `<span dir="ltr">${p.phone}</span>` : ''}
-                                ${(p.phone && (p.email || p.linkedin)) ? '<span>|</span>' : ''}
+                                ${(p.phone && (p.email || p.linkedin)) ? '<span style="color: #9ca3af;">|</span>' : ''}
                                 ${p.email ? `<span dir="ltr">${p.email}</span>` : ''}
-                                ${(p.email && p.linkedin) ? '<span>|</span>' : ''}
+                                ${(p.email && p.linkedin) ? '<span style="color: #9ca3af;">|</span>' : ''}
                                 ${p.linkedin ? `<span>LinkedIn: ${p.linkedin}</span>` : ''}
                             </div>
-                            ${p.photo ? `<img src="${p.photo}" class="w-16 h-16 md:w-20 md:h-20 object-cover rounded-full absolute top-4 md:top-6 ${state.lang === 'ar' ? 'left-4 md:left-6' : 'right-4 md:right-6'}" alt="Photo">` : ''}
+                            ${p.photo ? `<img src="${p.photo}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 50%; position: absolute; top: 20px; ${state.lang === 'ar' ? 'left' : 'right'}: 20px;" alt="Photo">` : ''}
                         </div>
                         ${data.summary ? `
-                        <div class="cv-ats-section mb-4 md:mb-6" style="text-align: ${state.lang === 'ar' ? 'right' : 'left'};">
-                            <h3 class="text-base md:text-lg font-bold uppercase mb-2 pb-1 border-b border-gray-400">${t.sectionSummary}</h3>
-                            <p class="text-sm md:text-base leading-relaxed whitespace-pre-wrap">${data.summary}</p>
+                        <div style="margin-bottom: 20px; text-align: ${state.lang === 'ar' ? 'right' : 'left'};">
+                            <h3 style="font-size: 14pt; font-weight: bold; text-transform: uppercase; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid #9ca3af;">${t.sectionSummary}</h3>
+                            <p style="white-space: pre-wrap; line-height: 1.5;">${data.summary}</p>
                         </div>
                         ` : ''}
                         ${data.experience.length > 0 ? `
-                            <div class="cv-ats-section mb-4 md:mb-6" style="text-align: ${state.lang === 'ar' ? 'right' : 'left'};">
-                                <h3 class="text-base md:text-lg font-bold uppercase mb-3 pb-1 border-b border-gray-400">${t.sectionWork}</h3>
+                            <div style="margin-bottom: 20px; text-align: ${state.lang === 'ar' ? 'right' : 'left'};">
+                                <h3 style="font-size: 14pt; font-weight: bold; text-transform: uppercase; margin-bottom: 12px; padding-bottom: 4px; border-bottom: 1px solid #9ca3af;">${t.sectionWork}</h3>
                                 ${sortedExperience.map(exp => `
-                                    <div class="mb-3">
-                                        <div class="flex justify-between items-start text-sm md:text-base">
-                                            <h4 class="font-bold">${exp.title || ''}${exp.company ? ` ${state.lang === 'ar' ? 'في' : 'at'} ${exp.company}` : ''}</h4>
-                                            <span class="text-gray-600">${exp.start || ''} – ${exp.end || t.currentlyWork}</span>
+                                    <div style="margin-bottom: 12px;">
+                                        <div style="display: flex; justify-content: space-between; font-size: 12pt; margin-bottom: 4px;">
+                                            <strong>${exp.title || ''}${exp.company ? ` ${state.lang === 'ar' ? 'في' : 'at'} ${exp.company}` : ''}</strong>
+                                            <span style="color: #4b5563;">${exp.start || ''} – ${exp.end || t.currentlyWork}</span>
                                         </div>
-                                        ${exp.description ? `<ul class="list-disc ${state.lang === 'ar' ? 'pr-4 md:pr-5' : 'pl-4 md:pl-5'} text-sm mt-1 space-y-0.5">
-                                            ${exp.description.split('\\n').filter(line => line.trim()).map(line => `<li>${line.trim()}</li>`).join('')}
+                                        ${exp.description ? `<ul style="padding-${state.lang === 'ar' ? 'right' : 'left'}: 20px; margin-top: 4px; list-style-type: disc; font-size: 11pt; line-height: 1.4;">
+                                            ${exp.description.split('\n').filter(line => line.trim()).map(line => `<li>${line.trim()}</li>`).join('')}
                                         </ul>` : ''}
                                     </div>
                                 `).join('')}
                             </div>
                         ` : ''}
                         ${data.education.length > 0 ? `
-                            <div class="cv-ats-section mb-4 md:mb-6" style="text-align: ${state.lang === 'ar' ? 'right' : 'left'};">
-                                <h3 class="text-base md:text-lg font-bold uppercase mb-3 pb-1 border-b border-gray-400">${t.sectionEducation}</h3>
+                            <div style="margin-bottom: 20px; text-align: ${state.lang === 'ar' ? 'right' : 'left'};">
+                                <h3 style="font-size: 14pt; font-weight: bold; text-transform: uppercase; margin-bottom: 12px; padding-bottom: 4px; border-bottom: 1px solid #9ca3af;">${t.sectionEducation}</h3>
                                 ${data.education.map(edu => `
-                                    <div class="flex justify-between items-start text-sm md:text-base mb-2">
-                                        <h4 class="font-bold">${edu.degree || ''}</h4>
-                                        <span class="text-gray-600">${edu.institution || ''} (${edu.date || ''})</span>
+                                    <div style="display: flex; justify-content: space-between; font-size: 12pt; margin-bottom: 8px;">
+                                        <strong>${edu.degree || ''}</strong>
+                                        <span style="color: #4b5563;">${edu.institution || ''}${edu.date ? ` (${edu.date})` : ''}</span>
                                     </div>
                                 `).join('')}
                             </div>
                         ` : ''}
                         ${data.skills.length > 0 ? `
-                            <div class="cv-ats-section mb-4 md:mb-6" style="text-align: ${state.lang === 'ar' ? 'right' : 'left'};">
-                                <h3 class="text-base md:text-lg font-bold uppercase mb-3 pb-1 border-b border-gray-400">${t.sectionSkills}</h3>
-                                <div class="flex flex-wrap gap-1 md:gap-2 text-xs md:text-sm">
+                            <div style="margin-bottom: 20px; text-align: ${state.lang === 'ar' ? 'right' : 'left'};">
+                                <h3 style="font-size: 14pt; font-weight: bold; text-transform: uppercase; margin-bottom: 12px; padding-bottom: 4px; border-bottom: 1px solid #9ca3af;">${t.sectionSkills}</h3>
+                                <div style="display: flex; flex-wrap: wrap; gap: 6px; font-size: 11pt;">
                                     ${data.skills.map(skill => `
-                                        <span class="bg-gray-100 px-2 py-1 md:px-3 md:py-1 rounded-full text-gray-700 border border-gray-300 whitespace-nowrap">${skill.name} (${skill.level})</span>
+                                        <span style="background-color: #f3f4f6; color: #374151; padding: 4px 10px; border-radius: 20px; white-space: nowrap;">${skill.name} (${skill.level})</span>
                                     `).join('')}
                                 </div>
                             </div>
                         ` : ''}
-                        <div class="flex flex-col md:flex-row ${state.lang === 'ar' ? 'gap-6 md:space-x-8 md:space-x-reverse' : 'gap-6 md:space-x-8'}">
+                        <div style="display: flex; flex-direction: column; ${state.lang === 'ar' ? 'gap: 16px;' : 'gap: 16px;'} ${state.lang === 'ar' ? 'margin-top: 16px;' : 'margin-top: 16px;'}">
                             ${data.languages.length > 0 ? `
-                                <div class="w-full md:w-1/2 cv-ats-section">
-                                    <h3 class="text-base md:text-lg font-bold uppercase mb-3 pb-1 border-b border-gray-400">${t.sectionLanguages}</h3>
-                                    <ul class="text-sm space-y-0.5" style="text-align: ${state.lang === 'ar' ? 'right' : 'left'};">
+                                <div style="flex: 1;">
+                                    <h3 style="font-size: 14pt; font-weight: bold; text-transform: uppercase; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid #9ca3af;">${t.sectionLanguages}</h3>
+                                    <ul style="list-style-type: none; padding: 0; font-size: 12pt; line-height: 1.5; text-align: ${state.lang === 'ar' ? 'right' : 'left'};">
                                         ${data.languages.map(lang => `<li>${lang.name}: ${lang.level}</li>`).join('')}
                                     </ul>
                                 </div>
                             ` : ''}
                             ${data.courses.length > 0 ? `
-                                <div class="w-full md:w-1/2 cv-ats-section">
-                                    <h3 class="text-base md:text-lg font-bold uppercase mb-3 pb-1 border-b border-gray-400">${t.sectionCourses}</h3>
-                                    <ul class="text-sm space-y-0.5" style="text-align: ${state.lang === 'ar' ? 'right' : 'left'};">
-                                        ${data.courses.map(course => `<li>${course.name} (${course.provider}, ${course.date})</li>`).join('')}
+                                <div style="flex: 1;">
+                                    <h3 style="font-size: 14pt; font-weight: bold; text-transform: uppercase; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid #9ca3af;">${t.sectionCourses}</h3>
+                                    <ul style="list-style-type: none; padding: 0; font-size: 12pt; line-height: 1.5; text-align: ${state.lang === 'ar' ? 'right' : 'left'};">
+                                        ${data.courses.map(course => `<li>${course.name} (${course.provider}${course.date ? `, ${course.date}` : ''})</li>`).join('')}
                                     </ul>
                                 </div>
                             ` : ''}
@@ -1237,7 +1190,6 @@
                     </div>
                 `;
             }
-
             function attachWizardEvents() {
                 const contentDiv = document.getElementById('wizard-content');
                 const backBtn = document.getElementById('back-btn');
@@ -1286,7 +1238,6 @@
                     input.addEventListener('blur', updateCVData);
                 });
             }
-
             function updateCVData() {
                 const step = state.cvWizardStep;
                 const data = state.cvData;
@@ -1338,7 +1289,6 @@
                 }
                 saveCVDataToFirestore();
             }
-
             function changeWizardStep(delta) {
                 updateCVData();
                 let newStep = state.cvWizardStep + delta;
@@ -1361,18 +1311,15 @@
                     }
                 }
             }
-
             function addItem(section, defaultItem) {
                 state.cvData[section].push(defaultItem);
                 renderView();
             }
-
             function removeItem(section, index) {
                 state.cvData[section].splice(index, 1);
                 saveCVDataToFirestore();
                 renderView();
             }
-
             function downloadPDF() {
                 const element = document.getElementById('cv-content-ats');
                 const t = T[state.lang];
@@ -1389,7 +1336,6 @@
                     alert(state.lang === 'ar' ? 'فشل توليد ملف PDF. يرجى المحاولة مرة أخرى.' : 'PDF generation failed. Please try again.');
                 });
             }
-
             function copyCVText() {
                 const element = document.getElementById('cv-content-ats');
                 if (!element) return;
@@ -1402,7 +1348,6 @@
                     fallbackCopyTextToClipboard(textContent);
                 }
             }
-
             function fallbackCopyTextToClipboard(text) {
                 const textarea = document.createElement('textarea');
                 textarea.value = text;
@@ -1419,7 +1364,6 @@
                     document.body.removeChild(textarea);
                 }
             }
-
             function showNotification(message, type = 'success') {
                 const notification = document.createElement('div');
                 notification.className = `fixed top-4 ${state.lang === 'ar' ? 'left-4' : 'right-4'} p-3 md:p-4 rounded-lg shadow-xl text-white z-50 transition-opacity duration-300 animate-fade-in max-w-xs md:max-w-md text-sm md:text-base`;
@@ -1431,7 +1375,6 @@
                     setTimeout(() => notification.remove(), 300);
                 }, 3000);
             }
-
             function showRedirectTimer(event) {
                 event.preventDefault();
                 const target = event.currentTarget;
@@ -1455,13 +1398,11 @@
                     }
                 }, 1000);
             }
-
             function changeLanguage(lang) {
                 state.lang = lang;
                 localStorage.setItem(STORAGE_KEY_LANG, lang);
                 renderView();
             }
-
             function changeView(view, event = null, step = 1) {
                 if (event) event.preventDefault();
                 if (state.view === 'langSelect') {
@@ -1472,29 +1413,6 @@
                 renderView();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
-
-            function toggleMobileMenu(show) {
-                if (show === undefined) show = elements.mobileMenuOverlay.classList.contains('hidden');
-                if (show) {
-                    elements.mobileMenuOverlay.classList.remove('hidden');
-                    setTimeout(() => elements.mobileMenuOverlay.classList.remove('opacity-0'), 10);
-                    // ✅ إغلاق القائمة عند الضغط خارجها
-                    document.addEventListener('click', closeMenuOnOutsideClick);
-                } else {
-                    elements.mobileMenuOverlay.classList.add('opacity-0');
-                    setTimeout(() => {
-                        elements.mobileMenuOverlay.classList.add('hidden');
-                        document.removeEventListener('click', closeMenuOnOutsideClick);
-                    }, 300);
-                }
-            }
-
-            function closeMenuOnOutsideClick(e) {
-                if (!elements.mobileMenuOverlay.contains(e.target) && e.target !== elements.mobileMenuBtn) {
-                    toggleMobileMenu(false);
-                }
-            }
-
             function showSplash() {
                 const splashShown = localStorage.getItem(STORAGE_KEY_SPLASH);
                 if (splashShown) {
@@ -1515,14 +1433,10 @@
                     renderView();
                 }, 3500);
             }
-
             function init() {
                 window.initializeFirebase();
-                elements.mobileMenuBtn.addEventListener('click', () => toggleMobileMenu(true));
-                elements.closeMobileMenu.addEventListener('click', () => toggleMobileMenu(false));
                 showSplash();
             }
-
             return {
                 init,
                 changeLanguage,
@@ -1533,13 +1447,11 @@
                 removeItem,
                 downloadPDF,
                 copyCVText,
-                toggleMobileMenu,
-                setFirebaseReady,
                 showRedirectTimer,
+                setFirebaseReady,
                 state: () => state
             };
         })();
-
         window.moraCVX = moraCVX;
         document.addEventListener('DOMContentLoaded', moraCVX.init);
     </script>
