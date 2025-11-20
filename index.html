@@ -7,13 +7,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script type="module">
-        // Import all necessary Firebase modules
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Global variables provided by the environment (Assume these are defined in your specific execution context)
-        // **NOTE:** Since this is a standalone HTML, these variables will be undefined, but the anonymous sign-in fallback handles it.
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-mora-cvx';
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : null;
         const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
@@ -22,14 +19,12 @@
         let userId = null;
         let isAuthReady = false;
 
-        // Function to initialize Firebase and authenticate
         async function initializeFirebase() {
             try {
                 if (!firebaseConfig) {
-                    console.warn("Firebase configuration is missing. Initializing with fallback anonymous auth.");
-                    // Fallback configuration (using a placeholder)
+                    console.warn("Firebase config missing. Using placeholder.");
                     const placeholderConfig = {
-                        apiKey: "AIzaSyC_PLACEHOLDER", // Must be a valid format, but functional doesn't matter here
+                        apiKey: "AIzaSyC_PLACEHOLDER",
                         authDomain: "placeholder.firebaseapp.com",
                         projectId: "placeholder-project"
                     };
@@ -37,21 +32,16 @@
                 } else {
                     app = initializeApp(firebaseConfig, appId);
                 }
-                
                 db = getFirestore(app);
                 auth = getAuth(app);
 
-                // Expose Firestore functions globally
-                window.firebaseImports = {
-                    doc: doc, setDoc: setDoc, getDoc: getDoc, onSnapshot: onSnapshot
-                };
+                window.firebaseImports = { doc, setDoc, getDoc, onSnapshot };
 
                 const authPromise = new Promise(resolve => {
                     const unsubscribe = onAuthStateChanged(auth, async (user) => {
                         if (user) {
                             userId = user.uid;
                             isAuthReady = true;
-                            console.log("Firebase Auth Ready. User ID:", userId);
                         } else {
                             if (initialAuthToken) {
                                 await signInWithCustomToken(auth, initialAuthToken);
@@ -59,130 +49,92 @@
                                 await signInAnonymously(auth);
                             }
                         }
-                        // Unsubscribe after the first state change check
-                        unsubscribe(); 
+                        unsubscribe();
                         resolve();
                     });
                 });
 
                 await authPromise;
-                // Only call setFirebaseReady once authentication is complete
+
                 if (window.moraCVX && window.moraCVX.setFirebaseReady) {
                     window.moraCVX.setFirebaseReady(db, auth, userId);
                 }
             } catch (error) {
-                console.error("Error initializing Firebase or signing in:", error);
+                console.error("Firebase init error:", error);
             }
         }
 
-        // Expose function for the app
         window.initializeFirebase = initializeFirebase;
-
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    
+    <!-- Three.js for 3D background -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        /* Custom Styles for Futuristic/Glassmorphism Design */
         :root {
-            --primary-color: #6366f1; /* Indigo 500 */
+            --primary-color: #6366f1;
             --bg-color: #0b0f1a;
             --glass-bg: rgba(255, 255, 255, 0.05);
             --glass-border: rgba(255, 255, 255, 0.1);
         }
-
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--bg-color);
-            /* Glowing background effect */
-            background-image: radial-gradient(at 0% 0%, rgba(139, 92, 246, 0.15) 0%, transparent 50%),
-                                  radial-gradient(at 100% 100%, rgba(34, 197, 94, 0.15) 0%, transparent 50%);
+            background-image: radial-gradient(at 0% 0%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
+                              radial-gradient(at 100% 100%, rgba(34, 197, 94, 0.1) 0%, transparent 50%);
             min-height: 100vh;
-            color: #e5e7eb; /* Light gray text */
+            color: #e5e7eb;
             overflow-x: hidden;
+            margin: 0;
         }
-
-        /* Glassmorphism Card Style - Professional, floating appearance */
         .glass-card {
             background-color: var(--glass-bg);
             backdrop-filter: blur(10px);
             border: 1px solid var(--glass-border);
-            /* Subtle blue glow/3D shadow */
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1), 0 10px 15px -3px rgba(99, 102, 241, 0.15); 
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1), 0 10px 15px -3px rgba(99, 102, 241, 0.15);
             transition: all 0.3s ease;
         }
         .glass-card:hover {
-            /* Enhanced glow on hover */
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -2px rgba(0, 0, 0, 0.2), 0 20px 25px -5px rgba(99, 102, 241, 0.3);
             transform: translateY(-2px);
         }
-
-        /* Futuristic Button Style - Gradient and shadow for a 3D effect */
         .futuristic-btn {
             @apply px-6 py-3 rounded-xl font-bold text-white shadow-lg transition-all duration-300 ease-in-out;
             background-image: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
         .futuristic-btn:hover {
-            /* Stronger glow */
             box-shadow: 0 0 15px rgba(99, 102, 241, 0.7);
             transform: scale(1.02);
         }
         .futuristic-btn:active {
             transform: scale(0.98);
         }
-        
-        /* 3D text effect for title and developer name (Glowing/Ethereal text) */
         .dev-text-3d {
-            text-shadow: 
-                0 0 8px rgba(99, 102, 241, 0.8), /* Inner glow */
-                0 4px 8px rgba(0, 0, 0, 0.5); /* 3D depth */
+            text-shadow: 0 0 8px rgba(99, 102, 241, 0.8), 0 4px 8px rgba(0, 0, 0, 0.5);
             letter-spacing: 2px;
         }
-        
-        /* Signature/Logo Animation - Cinematic Write-on Effect (Mora - CVX) */
         #signature-text {
-            /* Initial state for the animation */
             stroke-dasharray: 1000;
             stroke-dashoffset: 1000;
-            animation: 
-                write-on 1.5s ease-out forwards, /* 1.5s for writing */
-                text-glow 1.5s ease-in-out infinite alternate 1.5s; /* start glowing after writing */
+            animation: write-on 1.5s ease-out forwards, text-glow 1.5s ease-in-out infinite alternate 1.5s;
             fill: #fff;
             stroke: var(--primary-color);
             stroke-width: 1;
         }
-        /* Custom animation for write-on effect */
         @keyframes write-on {
-            to {
-                stroke-dashoffset: 0;
-            }
+            to { stroke-dashoffset: 0; }
         }
-
         @keyframes text-glow {
-            from {
-                text-shadow: 0 0 5px rgba(99, 102, 241, 0.4);
-            }
-            to {
-                text-shadow: 0 0 20px rgba(99, 102, 241, 1), 0 0 30px rgba(139, 92, 246, 0.8);
-            }
+            from { text-shadow: 0 0 5px rgba(99, 102, 241, 0.4); }
+            to { text-shadow: 0 0 20px rgba(99, 102, 241, 1), 0 0 30px rgba(139, 92, 246, 0.8); }
         }
-
-        /* Developer Credit Animation */
         @keyframes fade-in-up {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         .dev-credit-anim {
             animation: fade-in-up 0.5s ease-out forwards;
         }
-
-        /* Contact Icon Pulse/Movement - بطيء وطائر */
         @keyframes pulse-glow {
             0%, 100% {
                 transform: scale(1) translateY(0);
@@ -198,37 +150,17 @@
         .contact-icon-pulse {
             animation: pulse-glow 3s infinite ease-in-out;
         }
-        
-        /* Print Styles for CV Preview (Ensures clean, professional printout) */
         @media print {
-            body * {
-                visibility: hidden;
-            }
-            #cv-preview-container, #cv-preview-container * {
-                visibility: visible;
-            }
-            #cv-preview-container {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                color: black !important;
-                background: white !important;
-                padding: 20px;
-                box-shadow: none;
-            }
-            /* Ensure text-align is honored in print for RTL/LTR */
+            body * { visibility: hidden; }
+            #cv-preview-container, #cv-preview-container * { visibility: visible; }
+            #cv-preview-container { position: absolute; left: 0; top: 0; width: 100%; color: black !important; background: white !important; padding: 20px; box-shadow: none; }
             [dir="rtl"] .cv-ats-section { text-align: right !important; }
             [dir="ltr"] .cv-ats-section { text-align: left !important; }
         }
-
-        /* RTL/LTR adjustment for text align (Important for Arabic/English CV) */
         .text-start-lang { text-align: right; }
         .text-end-lang { text-align: left; }
         [dir="ltr"] .text-start-lang { text-align: left; }
         [dir="ltr"] .text-end-lang { text-align: right; }
-        
-        /* Custom style for futuristic-outline-btn (used in nav/wizard) */
         .futuristic-outline-btn {
             @apply px-4 py-2 rounded-xl font-bold transition-all duration-300 ease-in-out;
             border: 1px solid var(--primary-color);
@@ -238,8 +170,6 @@
         .futuristic-outline-btn:hover {
             background-color: rgba(99, 102, 241, 0.1);
         }
-
-        /* Fade-in animation for views */
         @keyframes fade-in {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
@@ -247,43 +177,62 @@
         .animate-fade-in {
             animation: fade-in 0.5s ease-out forwards;
         }
+        .input-error {
+            border-color: #ef4444 !important;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2) !important;
+        }
+        .input-error-label {
+            color: #ef4444 !important;
+        }
+
+        /* 3D Background for lang-select */
+        #three-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        .lang-select-content {
+            position: relative;
+            z-index: 10;
+        }
     </style>
 </head>
 <body id="app-body">
-
+    <!-- Splash -->
     <div id="splash-screen" class="fixed inset-0 flex flex-col items-center justify-center z-50 bg-slate-950 transition-opacity duration-500 opacity-100">
         <svg id="signature-svg" width="400" height="150" viewBox="0 0 400 150" class="mb-6">
             <text id="signature-text" x="50%" y="70%" dominant-baseline="middle" text-anchor="middle" font-family="'Inter', sans-serif" font-size="48" font-weight="bold" fill="none">
                 Mora – CVX
             </text>
         </svg>
-
         <p class="text-xl text-indigo-400 dev-text-3d opacity-0 transition-opacity duration-500" id="dev-credit">
             تصميم عمرو لطفي
         </p>
     </div>
 
+    <!-- Redirect Overlay -->
     <div id="redirect-overlay" class="fixed inset-0 bg-slate-950/90 z-[60] hidden flex-col items-center justify-center transition-opacity duration-300 opacity-0">
         <h2 class="text-4xl font-extrabold text-indigo-400 mb-4 dev-text-3d" id="redirect-message"></h2>
         <p class="text-6xl font-bold text-white mb-6 dev-text-3d" id="redirect-timer"></p>
         <p class="text-lg text-gray-400 dev-text-3d">تطوير عمرو لطفي</p>
     </div>
 
+    <!-- App -->
     <div id="app-container" class="hidden min-h-screen">
-        
         <header id="app-header" class="glass-card sticky top-0 z-40 p-4 flex justify-between items-center transition-all duration-300">
             <h1 class="text-3xl font-extrabold text-indigo-400 dev-text-3d">Mora – CVX</h1>
-            <nav id="nav-links" class="hidden md:flex space-x-4 space-x-reverse md:space-x-4 md:space-x-reverse text-lg">
-                </nav>
+            <nav id="nav-links" class="hidden md:flex space-x-4 space-x-reverse md:space-x-4 md:space-x-reverse text-lg"></nav>
             <button id="mobile-menu-btn" class="text-white md:hidden">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="12" x2="20" y2="12"></line><line x1="4" y1="6" x2="20" y2="6"></line><line x1="4" y1="18" x2="20" y2="18"></line></svg>
             </button>
-            <div id="lang-toggle-container" class="hidden md:block">
-                </div>
+            <div id="lang-toggle-container" class="hidden md:block"></div>
         </header>
 
         <main id="main-view" class="p-4 md:p-8"></main>
-        
+
         <div id="mobile-menu-overlay" class="fixed inset-0 bg-slate-950/90 z-40 hidden flex-col items-center justify-center transition-opacity duration-300 opacity-0">
             <button id="close-mobile-menu" class="absolute top-4 right-4 text-white">
                 <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -292,14 +241,12 @@
         </div>
     </div>
 
-
     <script>
-        // Global State and Core Logic
         const moraCVX = (() => {
             const STORAGE_KEY_SPLASH = 'mora-cvx-splash-shown';
             const STORAGE_KEY_LANG = 'mora-cvx-language';
             const STORAGE_KEY_CV = 'mora-cvx-data';
-            
+
             let state = {
                 lang: localStorage.getItem(STORAGE_KEY_LANG) || 'ar',
                 view: 'splash',
@@ -336,61 +283,49 @@
                 redirectMessage: document.getElementById('redirect-message'),
                 redirectTimer: document.getElementById('redirect-timer'),
             };
-            
-            // --- FIREBASE AND DATA HANDLERS ---
-            
+
+            // --- FIREBASE ---
             function setFirebaseReady(dbInstance, authInstance, uid) {
                 state.db = dbInstance;
                 state.userId = uid;
                 state.isAuthReady = true;
-                
-                // Load data from Firestore and set up real-time listener
+
                 if (state.db && state.userId && window.firebaseImports) {
                     const cvRef = window.firebaseImports.doc(state.db, `artifacts/${window.__app_id || 'default-mora-cvx'}/users/${state.userId}/cvs/main_cv`);
-                    
-                    // Real-time listener
                     window.firebaseImports.onSnapshot(cvRef, (doc) => {
                         if (doc.exists()) {
                             const data = doc.data().cvData;
                             if (data) {
-                                state.cvData = JSON.parse(data); // Parse serialized JSON
-                                render(); // Re-render when data changes (e.g., loaded or updated by another session)
+                                state.cvData = JSON.parse(data);
+                                render();
                             }
                         } else {
-                            // If document doesn't exist, save current local data
                             saveCVDataToFirestore();
                         }
-                    }, (error) => {
-                        console.error("Firestore Snapshot Error:", error);
                     });
                 }
             }
-            
+
             async function saveCVDataToFirestore() {
                 if (!state.db || !state.userId || !window.firebaseImports) {
-                    console.warn("Firestore not ready. Saving to Local Storage only.");
                     localStorage.setItem(STORAGE_KEY_CV, JSON.stringify(state.cvData));
                     return;
                 }
-                
-                // Serialize CV data to a JSON string before saving
                 const cvDataJson = JSON.stringify(state.cvData);
                 const cvRef = window.firebaseImports.doc(state.db, `artifacts/${window.__app_id || 'default-mora-cvx'}/users/${state.userId}/cvs/main_cv`);
-                
                 try {
                     await window.firebaseImports.setDoc(cvRef, { cvData: cvDataJson, lastUpdated: new Date() }, { merge: true });
-                    localStorage.setItem(STORAGE_KEY_CV, JSON.stringify(state.cvData)); // Backup to LS
-                    console.log("CV Data saved to Firestore successfully.");
+                    localStorage.setItem(STORAGE_KEY_CV, JSON.stringify(state.cvData));
                 } catch (error) {
-                    console.error("Error saving CV data to Firestore:", error);
+                    console.error("Firestore save error:", error);
                 }
             }
-            
-            // --- TRANSLATION DATA (Already complete) ---
+
+            // --- TRANSLATIONS ---
             const T = {
                 ar: {
                     appName: 'Mora – CVX',
-                    developedBy: 'تصميم عمرو لطفي', // Changed to "تصميم" (design)
+                    developedBy: 'تصميم عمرو لطفي',
                     selectLangTitle: 'اختر لغة الواجهة والـ CV',
                     selectLangBtn: 'إنشاء سيرة ذاتية باللغة العربية',
                     navHome: 'الرئيسية',
@@ -399,7 +334,7 @@
                     navPolicy: 'سياسة الخصوصية',
                     navContact: 'تواصل معنا',
                     navChangeLang: 'تغيير اللغة',
-                    heroTitle: 'ابنِ سيرتك الذاتية كأنها قادمة من المستقبل',
+                    heroTitle: 'ابنِ سيرتك الذاتية باحترافية', // ← ✅ مُعدّل
                     heroDesc: 'Mora – CVX يساعدك على إنشاء CV احترافي، منظم، ومتوافق مع أنظمة التوظيف ATS، باللغة العربية أو الإنجليزية، مع تصميم جذاب وانيميشن مميزة.',
                     heroBtn: 'ابدأ إنشاء السيرة الذاتية الآن',
                     featureATS: 'متوافق مع أنظمة ATS',
@@ -427,7 +362,8 @@
                     email: 'البريد الإلكتروني',
                     city: 'المدينة والدولة',
                     linkedin: 'رابط LinkedIn',
-                    photo: 'صورة شخصية (رابط URL اختياري)',
+                    photoUpload: 'اختر صورة شخصية (اختياري)',
+                    photoLabel: 'صورة شخصية',
                     summaryTitle: 'ملخص مهني',
                     summaryPlaceholder: 'اكتب ملخصًا موجزًا وقويًا يوضح خبرتك وأهدافك المهنية.',
                     workExpTitle: 'الخبرات العملية',
@@ -437,6 +373,8 @@
                     workStart: 'تاريخ البداية (مثل: 2020-03)',
                     workEnd: 'تاريخ النهاية (أو حتى الآن)',
                     workDesc: 'الإنجازات والمهام (نقاط، سطر لكل نقطة)',
+                    requiredField: 'هذا الحقل مطلوب',
+                    requiredAtLeastOne: 'يجب إضافة عنصر واحد على الأقل',
                     // Contact Page
                     contactTitle: 'تواصل معنا',
                     contactIntro: 'لأي استفسار، تعاون، اقتراح، أو مشكلات تقنية متعلقة بتطبيق Mora – CVX، يمكنك التواصل معنا عبر أي من القنوات التالية:',
@@ -489,7 +427,7 @@
                 },
                 en: {
                     appName: 'Mora – CVX',
-                    developedBy: 'Design Amr Lotfy', // Changed to "Design"
+                    developedBy: 'Design Amr Lotfy',
                     selectLangTitle: 'Select Interface and CV Language',
                     selectLangBtn: 'Create CV in English',
                     navHome: 'Home',
@@ -498,7 +436,7 @@
                     navPolicy: 'Privacy Policy',
                     navContact: 'Contact Us',
                     navChangeLang: 'Change Language',
-                    heroTitle: 'Build Your CV As If It Came From The Future',
+                    heroTitle: 'Build Your CV Professionally', // ← ✅ مُعدّل
                     heroDesc: 'Mora – CVX helps you create a professional, organized, and ATS-compliant CV, in Arabic or English, with an attractive design and unique animations.',
                     heroBtn: 'Start Building Your CV Now',
                     featureATS: 'ATS-Compliant Structure',
@@ -519,14 +457,14 @@
                     back: 'Back',
                     review: 'Review',
                     finish: 'Finish & Preview',
-                    // Form fields
                     fullName: 'Full Name',
                     jobTitle: 'Job Title',
                     phone: 'Phone Number',
                     email: 'Email',
                     city: 'City and Country',
                     linkedin: 'LinkedIn URL',
-                    photo: 'Personal Photo (Optional URL)',
+                    photoUpload: 'Upload Personal Photo (Optional)',
+                    photoLabel: 'Personal Photo',
                     summaryTitle: 'Professional Summary',
                     summaryPlaceholder: 'Write a brief, powerful summary detailing your experience and professional objectives.',
                     workExpTitle: 'Work Experience',
@@ -536,11 +474,11 @@
                     workStart: 'Start Date (e.g., 2020-03)',
                     workEnd: 'End Date (or Present)',
                     workDesc: 'Achievements and Responsibilities (Bullet Points, one per line)',
-                    // Contact Page
+                    requiredField: 'This field is required',
+                    requiredAtLeastOne: 'At least one item is required',
                     contactTitle: 'Contact Us',
                     contactIntro: 'For any inquiries, collaboration opportunities, suggestions, or technical issues related to Mora – CVX, feel free to reach out through any of the channels below:',
                     redirecting: 'Redirecting you to',
-                    // Policy Page
                     policyTitle: 'Privacy Policy',
                     policyContent: `
                         <p class="mb-4">At Mora – CVX, we respect your privacy and are committed to protecting your personal data. This policy clarifies how we handle the information you enter into the application when creating your CV, and your rights regarding this data.</p>
@@ -561,11 +499,9 @@
                         <p>This Privacy Policy may be updated from time to time. Any changes will be posted on this page. You are advised to review this policy periodically.</p>
                         <p class="mt-8 text-sm text-gray-500">Last updated: November 2025</p>
                     `,
-                    // CV Preview
                     downloadPDF: 'Download as PDF',
                     copyText: 'Copy CV text',
                     backToEdit: 'Back to edit',
-                    // CV Sections
                     sectionPersonal: 'Contact Information',
                     sectionSummary: 'Professional Summary',
                     sectionWork: 'Work Experience',
@@ -588,19 +524,76 @@
                 }
             };
 
-            // --- UI AND NAVIGATION RENDERING ---
+            // --- VALIDATION HELPERS ---
+            function validateStep(step) {
+                const t = T[state.lang];
+                let valid = true;
 
+                const getEl = id => document.getElementById(id);
+                const setError = (id, msg) => {
+                    const el = getEl(id);
+                    if (el) {
+                        el.classList.add('input-error');
+                        const label = document.querySelector(`label[for="${id}"]`);
+                        if (label) label.classList.add('input-error-label');
+                    }
+                    showNotification(msg, 'error');
+                    valid = false;
+                };
+                const clearErrors = () => {
+                    document.querySelectorAll('.input-error, .input-error-label').forEach(el => {
+                        el.classList.remove('input-error', 'input-error-label');
+                    });
+                };
+
+                clearErrors();
+
+                switch (step) {
+                    case 1:
+                        if (!state.cvData.personal.fullName?.trim()) {
+                            setError('fullName', t.requiredField);
+                            valid = false;
+                        }
+                        break;
+                    case 2:
+                        if (!state.cvData.summary?.trim()) {
+                            setError('summary', t.requiredField);
+                            valid = false;
+                        }
+                        break;
+                    case 3:
+                        if (state.cvData.experience.length === 0 ||
+                            !state.cvData.experience.some(e => e.title?.trim() && e.company?.trim())) {
+                            showNotification(t.requiredAtLeastOne, 'error');
+                            valid = false;
+                        }
+                        break;
+                    case 4:
+                        if (state.cvData.education.length === 0 ||
+                            !state.cvData.education.some(e => e.degree?.trim() && e.institution?.trim())) {
+                            showNotification(t.requiredAtLeastOne, 'error');
+                            valid = false;
+                        }
+                        break;
+                    case 5:
+                        if (state.cvData.skills.length === 0 ||
+                            !state.cvData.skills.some(s => s.name?.trim())) {
+                            showNotification(t.requiredAtLeastOne, 'error');
+                            valid = false;
+                        }
+                        break;
+                }
+
+                return valid;
+            }
+
+            // --- UI ---
             function updateDirection() {
                 const dir = state.lang === 'ar' ? 'rtl' : 'ltr';
                 elements.body.setAttribute('dir', dir);
                 elements.body.lang = state.lang;
-                // Update dynamic classes for text alignment based on language
-                document.querySelectorAll('.text-start-lang').forEach(el => {
-                    el.style.textAlign = dir === 'rtl' ? 'right' : 'left';
-                });
-                document.querySelectorAll('.text-end-lang').forEach(el => {
-                    el.style.textAlign = dir === 'rtl' ? 'left' : 'right';
-                });
+                document.querySelectorAll('.text-start-lang').forEach(el => el.style.textAlign = dir === 'rtl' ? 'right' : 'left');
+                document.querySelectorAll('.text-end-lang').forEach(el => el.style.textAlign = dir === 'rtl' ? 'left' : 'right');
             }
 
             function renderHeaderAndNav() {
@@ -611,22 +604,16 @@
                     { name: t.navPolicy, view: 'policy' },
                     { name: t.navContact, view: 'contact' },
                 ];
-                
-                // Navigation Links
                 elements.navLinks.innerHTML = links.map(link => `
                     <a href="#" data-view="${link.view}" class="text-gray-300 hover:text-indigo-400 transition-colors duration-200 text-lg font-medium" onclick="moraCVX.changeView('${link.view}', event)">
                         ${link.name}
                     </a>
                 `).join('<span class="text-gray-600">|</span>');
-
-                // Mobile Navigation Links (duplicates for simplicity)
                 elements.mobileNavLinks.innerHTML = links.map(link => `
                     <a href="#" data-view="${link.view}" class="text-gray-100 hover:text-indigo-400 transition-colors duration-200 text-3xl font-medium" onclick="moraCVX.changeView('${link.view}', event); moraCVX.toggleMobileMenu(false);">
                         ${link.name}
                     </a>
                 `).join('');
-
-                // Language Toggle
                 const otherLang = state.lang === 'ar' ? 'en' : 'ar';
                 const otherLangText = state.lang === 'ar' ? 'English' : 'العربية';
                 elements.langToggleContainer.innerHTML = `
@@ -639,8 +626,6 @@
             function renderView() {
                 elements.mainView.innerHTML = '';
                 elements.appContainer.classList.remove('hidden');
-                
-                // Show header only on non-splash/non-language select views
                 if (state.view !== 'splash' && state.view !== 'langSelect') {
                     elements.header.classList.remove('hidden');
                     renderHeaderAndNav();
@@ -651,6 +636,7 @@
                 switch (state.view) {
                     case 'langSelect':
                         elements.mainView.innerHTML = renderLanguageSelect();
+                        initThreeJSBackground();
                         break;
                     case 'landing':
                         elements.mainView.innerHTML = renderLandingPage();
@@ -669,26 +655,119 @@
                         elements.mainView.innerHTML = renderContactPage();
                         break;
                     default:
-                        // Fallback to language select
                         state.view = 'langSelect';
                         elements.mainView.innerHTML = renderLanguageSelect();
+                        initThreeJSBackground();
                         break;
                 }
-                
                 updateDirection();
             }
-            
-            // --- VIEW RENDERERS ---
 
+            // --- THREE.JS 3D BACKGROUND FOR LANG SELECT ---
+            let scene, camera, renderer, particles;
+            function initThreeJSBackground() {
+                if (state.view !== 'langSelect') return;
+                if (renderer) renderer.dispose();
+
+                const canvas = document.createElement('canvas');
+                canvas.id = 'three-canvas';
+                document.body.appendChild(canvas);
+
+                const w = window.innerWidth;
+                const h = window.innerHeight;
+
+                scene = new THREE.Scene();
+                camera = new THREE.PerspectiveCamera(75, w / h, 0.1, 1000);
+                camera.position.z = 5;
+
+                renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+                renderer.setSize(w, h);
+                renderer.setPixelRatio(window.devicePixelRatio);
+
+                const particlesGeometry = new THREE.BufferGeometry();
+                const particleCount = 2000;
+                const posArray = new Float32Array(particleCount * 3);
+                for (let i = 0; i < particleCount * 3; i++) {
+                    posArray[i] = (Math.random() - 0.5) * 20;
+                }
+                particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+                const particlesMaterial = new THREE.PointsMaterial({
+                    color: 0x6366f1,
+                    size: 0.05,
+                    transparent: true,
+                    opacity: 0.8,
+                    sizeAttenuation: true
+                });
+                particles = new THREE.Points(particlesGeometry, particlesMaterial);
+                scene.add(particles);
+
+                const texts = ['CV', 'Exp', 'Edu', 'Skills', 'Mora', 'ATS'];
+                for (let i = 0; i < 30; i++) {
+                    const geo = new THREE.SphereGeometry(0.07 + Math.random() * 0.12, 16, 16);
+                    const mat = new THREE.MeshBasicMaterial({
+                        color: i % 3 === 0 ? 0x6366f1 : i % 3 === 1 ? 0x8b5cf6 : 0x10b981,
+                        transparent: true,
+                        opacity: 0.82
+                    });
+                    const mesh = new THREE.Mesh(geo, mat);
+                    mesh.position.set(
+                        (Math.random() - 0.5) * 12,
+                        (Math.random() - 0.5) * 12,
+                        (Math.random() - 0.5) * 12
+                    );
+                    mesh.userData = {
+                        vx: (Math.random() - 0.5) * 0.017,
+                        vy: (Math.random() - 0.5) * 0.017,
+                        vz: (Math.random() - 0.5) * 0.017
+                    };
+                    scene.add(mesh);
+                }
+
+                const animate = () => {
+                    requestAnimationFrame(animate);
+                    particles.rotation.x += 0.0002;
+                    particles.rotation.y += 0.0003;
+                    scene.traverse(child => {
+                        if (child.isMesh && child.userData.vx !== undefined) {
+                            child.position.x += child.userData.vx;
+                            child.position.y += child.userData.vy;
+                            child.position.z += child.userData.vz;
+                            if (Math.abs(child.position.x) > 12) child.userData.vx *= -1;
+                            if (Math.abs(child.position.y) > 12) child.userData.vy *= -1;
+                            if (Math.abs(child.position.z) > 12) child.userData.vz *= -1;
+                        }
+                    });
+                    renderer.render(scene, camera);
+                };
+                animate();
+
+                const resize = () => {
+                    const w = window.innerWidth;
+                    const h = window.innerHeight;
+                    camera.aspect = w / h;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(w, h);
+                };
+                window.addEventListener('resize', resize);
+            }
+
+            function destroyThreeJS() {
+                if (renderer) {
+                    renderer.dispose();
+                    renderer = null;
+                }
+                const canvas = document.getElementById('three-canvas');
+                if (canvas) canvas.remove();
+            }
+
+            // --- VIEW RENDERERS ---
             function renderLanguageSelect() {
                 const t_ar = T.ar;
                 const t_en = T.en;
-                
                 return `
-                    <div class="flex flex-col items-center justify-center h-[calc(100vh-6rem)] md:h-[calc(100vh-12rem)] space-y-10 p-4 animate-fade-in">
+                    <div class="lang-select-content flex flex-col items-center justify-center h-[calc(100vh-6rem)] md:h-[calc(100vh-12rem)] space-y-10 p-4 animate-fade-in">
                         <h2 class="text-4xl font-extrabold text-white dev-text-3d">${T.ar.appName}</h2>
                         <p class="text-lg text-gray-400">${t_ar.selectLangTitle} / ${t_en.selectLangTitle}</p>
-                        
                         <div class="flex flex-col md:flex-row space-y-6 md:space-y-0 md:space-x-8 ${state.lang === 'ar' ? 'md:space-x-reverse' : ''}">
                             <button class="futuristic-btn text-xl" onclick="moraCVX.changeLanguage('ar'); moraCVX.changeView('landing')">
                                 ${t_ar.selectLangBtn}
@@ -703,7 +782,6 @@
 
             function renderLandingPage() {
                 const t = T[state.lang];
-                
                 return `
                     <div class="flex flex-col md:flex-row items-center justify-between p-8 space-y-10 md:space-y-0 animate-fade-in">
                         <div class="md:w-1/2 space-y-6 text-start-lang">
@@ -718,7 +796,6 @@
                             </button>
                             <p class="mt-4 text-sm text-gray-500">User ID: ${state.userId || '...loading'}</p>
                         </div>
-                        
                         <div class="md:w-1/2 grid grid-cols-2 gap-6 p-4">
                             ${[t.featureATS, t.featureLang, t.featureDesign, t.featureContact].map((feature, index) => `
                                 <div class="glass-card p-6 rounded-2xl text-center flex flex-col items-center">
@@ -736,26 +813,54 @@
                 `;
             }
 
-            // CV Builder Renderer
+            function renderInput(label, id, value, type = 'text', placeholder = '', isRequired = false) {
+                return `
+                    <div class="mb-4">
+                        <label for="${id}" class="block text-gray-400 mb-2 text-start-lang">${label}${isRequired ? ' *' : ''}</label>
+                        <input 
+                            type="${type}" 
+                            id="${id}" 
+                            name="${id}" 
+                            value="${value}" 
+                            placeholder="${placeholder || label}"
+                            class="w-full p-3 rounded-lg bg-slate-800 border border-slate-700 text-white focus:ring-indigo-500 focus:border-indigo-500"
+                        >
+                    </div>
+                `;
+            }
+
+            function renderPhotoUpload(t) {
+                const hasPhoto = state.cvData.personal.photo;
+                return `
+                    <div class="mb-4">
+                        <label class="block text-gray-400 mb-2 text-start-lang">${t.photoLabel}</label>
+                        <div class="flex items-center space-x-4 ${state.lang === 'ar' ? 'space-x-reverse' : ''}">
+                            <input type="file" id="photo-upload" accept="image/*" class="hidden" />
+                            <label for="photo-upload" class="futuristic-outline-btn cursor-pointer flex items-center space-x-2 ${state.lang === 'ar' ? 'space-x-reverse' : ''}">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                                <span>${t.photoUpload}</span>
+                            </label>
+                            ${hasPhoto ? `<img id="photo-preview" src="${state.cvData.personal.photo}" class="w-16 h-16 object-cover rounded-lg border border-slate-700" />` : ''}
+                        </div>
+                        <p class="text-xs text-gray-500 mt-1">${state.lang === 'ar' ? 'يتم تخزين الصورة محليًا فقط (لا تُرفع للسحابة).' : 'Image stored locally only (not uploaded to cloud).'}</p>
+                    </div>
+                `;
+            }
+
             function renderCVWizard() {
                 const t = T[state.lang];
                 const currentStep = state.cvWizardStep;
                 const totalSteps = state.maxWizardStep;
-
                 const stepContent = renderWizardStepContent(currentStep, t);
-                
                 return `
                     <div class="max-w-4xl mx-auto p-4 md:p-8 animate-fade-in">
                         <h2 class="text-3xl font-extrabold text-indigo-400 mb-6 text-center">${t.wizardTitle} ${currentStep} ${state.lang === 'ar' ? 'من' : 'of'} ${totalSteps}: ${t.wizardSteps[currentStep - 1]}</h2>
-
                         <div class="w-full bg-slate-800 rounded-full h-2.5 mb-10">
                             <div class="bg-indigo-500 h-2.5 rounded-full transition-all duration-500" style="width: ${((currentStep / totalSteps) * 100).toFixed(0)}%"></div>
                         </div>
-
                         <div id="wizard-content" class="glass-card p-6 md:p-10 rounded-2xl">
                             ${stepContent}
                         </div>
-
                         <div class="mt-8 flex justify-between">
                             <button id="back-btn" class="futuristic-outline-btn ${currentStep === 1 ? 'invisible' : ''}">
                                 ${t.back}
@@ -776,30 +881,29 @@
             function renderWizardStepContent(step, t) {
                 const data = state.cvData;
                 let html = '';
-
                 switch (step) {
-                    case 1: // Personal Info
+                    case 1:
                         html = `
                             <h3 class="text-2xl font-bold mb-6 text-indigo-300 text-start-lang">${t.wizardSteps[0]}</h3>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                ${renderInput(t.fullName, 'fullName', data.personal.fullName || '', 'text')}
+                                ${renderInput(t.fullName, 'fullName', data.personal.fullName || '', 'text', '', true)}
                                 ${renderInput(t.jobTitle, 'jobTitle', data.personal.jobTitle || '', 'text')}
                                 ${renderInput(t.phone, 'phone', data.personal.phone || '', 'tel')}
                                 ${renderInput(t.email, 'email', data.personal.email || '', 'email')}
                                 ${renderInput(t.city, 'city', data.personal.city || '', 'text')}
                                 ${renderInput(t.linkedin, 'linkedin', data.personal.linkedin || '', 'url')}
-                                ${renderInput(t.photo, 'photo', data.personal.photo || '', 'url', t.photo)}
+                                ${renderPhotoUpload(t)}
                             </div>
                         `;
                         break;
-                    case 2: // Professional Summary
+                    case 2:
                         html = `
                             <h3 class="text-2xl font-bold mb-6 text-indigo-300 text-start-lang">${t.wizardSteps[1]}</h3>
-                            <label for="summary" class="block text-gray-400 mb-2 text-start-lang">${t.summaryTitle}</label>
+                            <label for="summary" class="block text-gray-400 mb-2 text-start-lang">${t.summaryTitle} *</label>
                             <textarea id="summary" class="w-full p-3 rounded-lg bg-slate-800 border border-slate-700 focus:ring-indigo-500 focus:border-indigo-500 min-h-[200px] text-white" placeholder="${t.summaryPlaceholder}">${data.summary || ''}</textarea>
                         `;
                         break;
-                    case 3: // Work Experience
+                    case 3:
                         html = `
                             <h3 class="text-2xl font-bold mb-6 text-indigo-300 text-start-lang">${t.wizardSteps[2]}</h3>
                             <div id="work-experience-list" class="space-y-6">
@@ -811,7 +915,7 @@
                             </button>
                         `;
                         break;
-                    case 4: // Education
+                    case 4:
                         html = `
                             <h3 class="text-2xl font-bold mb-6 text-indigo-300 text-start-lang">${t.wizardSteps[3]}</h3>
                             <div id="education-list" class="space-y-6">
@@ -823,7 +927,7 @@
                             </button>
                         `;
                         break;
-                    case 5: // Skills
+                    case 5:
                         html = `
                             <h3 class="text-2xl font-bold mb-6 text-indigo-300 text-start-lang">${t.wizardSteps[4]}</h3>
                             <div id="skills-list" class="space-y-4">
@@ -835,10 +939,9 @@
                             </button>
                         `;
                         break;
-                    case 6: // Languages and Courses
+                    case 6:
                         html = `
                             <h3 class="text-2xl font-bold mb-6 text-indigo-300 text-start-lang">${t.wizardSteps[5]}</h3>
-                            
                             <h4 class="text-xl font-semibold mt-8 mb-4 text-indigo-400 text-start-lang">${t.sectionLanguages}</h4>
                             <div id="languages-list" class="space-y-4">
                                 ${data.languages.map((lang, index) => renderLanguageItem(lang, index, t)).join('')}
@@ -847,7 +950,6 @@
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                                 <span>${state.lang === 'ar' ? 'إضافة لغة' : 'Add Language'}</span>
                             </button>
-                            
                             <h4 class="text-xl font-semibold mt-8 mb-4 text-indigo-400 text-start-lang">${t.sectionCourses}</h4>
                             <div id="courses-list" class="space-y-4">
                                 ${data.courses.map((course, index) => renderCourseItem(course, index, t)).join('')}
@@ -858,11 +960,10 @@
                             </button>
                         `;
                         break;
-                    case 7: // Review
+                    case 7:
                         html = `
                             <h3 class="text-2xl font-bold mb-6 text-indigo-300 text-start-lang">${t.wizardSteps[6]}</h3>
                             <p class="text-gray-400 mb-6 text-start-lang">${state.lang === 'ar' ? 'يمكنك مراجعة جميع البيانات المدخلة قبل الانتقال إلى المعاينة النهائية.' : 'You can review all entered data before proceeding to the final preview.'}</p>
-                            
                             <div class="space-y-4 text-start-lang">
                                 <div class="glass-card p-4 rounded-lg">
                                     <h4 class="font-bold text-indigo-300">${t.sectionPersonal}</h4>
@@ -887,25 +988,7 @@
                 }
                 return html;
             }
-            
-            // Helper function for input fields
-            function renderInput(label, id, value, type = 'text', placeholder = '') {
-                return `
-                    <div class="mb-4">
-                        <label for="${id}" class="block text-gray-400 mb-2 text-start-lang">${label}</label>
-                        <input 
-                            type="${type}" 
-                            id="${id}" 
-                            name="${id}" 
-                            value="${value}" 
-                            placeholder="${placeholder || label}"
-                            class="w-full p-3 rounded-lg bg-slate-800 border border-slate-700 text-white focus:ring-indigo-500 focus:border-indigo-500"
-                        >
-                    </div>
-                `;
-            }
 
-            // Helper for Work Experience item
             function renderWorkExpItem(exp, index, t) {
                 return `
                     <div id="work-exp-item-${index}" class="glass-card p-4 rounded-lg relative">
@@ -925,7 +1008,6 @@
                 `;
             }
 
-            // Helper for Education item
             function renderEducationItem(edu, index, t) {
                 return `
                     <div id="edu-item-${index}" class="glass-card p-4 rounded-lg relative">
@@ -942,7 +1024,6 @@
                 `;
             }
 
-            // Helper for Skill item
             function renderSkillItem(skill, index, t) {
                 return `
                     <div id="skill-item-${index}" class="flex items-center space-x-4 ${state.lang === 'ar' ? 'space-x-reverse' : ''} glass-card p-3 rounded-lg">
@@ -954,8 +1035,7 @@
                     </div>
                 `;
             }
-            
-            // Helper for Language item
+
             function renderLanguageItem(lang, index, t) {
                 return `
                     <div id="lang-item-${index}" class="flex items-center space-x-4 ${state.lang === 'ar' ? 'space-x-reverse' : ''} glass-card p-3 rounded-lg">
@@ -967,8 +1047,7 @@
                     </div>
                 `;
             }
-            
-            // Helper for Course item
+
             function renderCourseItem(course, index, t) {
                 return `
                     <div id="course-item-${index}" class="glass-card p-4 rounded-lg relative">
@@ -987,20 +1066,17 @@
 
             function renderContactPage() {
                 const t = T[state.lang];
-                // Added a 'link' data attribute to handle redirection with a timer
                 const contacts = [
                     { name: 'Facebook', link: 'https://www.facebook.com/share/1CDtFCSPVD/', icon: `<path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path>` },
                     { name: 'Instagram', link: 'https://www.instagram.com/eltopamr55?igsh=MWJ2MzJqaXBlZzRlaQ==', icon: `<rect width="20" height="20" x="2" y="2" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line>` },
-                    { name: 'Telegram', link: 'https://t.me/elto47', icon: `<path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm4.3 8L12 14.5 7.7 10 12 6.5l4.3 3.5z"></path><path d="M12 12V6.5M12 12L8 9.5M12 12L16 9.5M8 14.5L12 10"></path><path d="M16 14.5L12 10"></path>` }, // Adjusted Telegram to be a cleaner icon
+                    { name: 'Telegram', link: 'https://t.me/elto47', icon: `<path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm4.3 8L12 14.5 7.7 10 12 6.5l4.3 3.5z"></path>` },
                     { name: 'Email', link: 'mailto:amrloutfy2006@gmail.com', icon: `<rect width="20" height="16" x="2" y="4" rx="2"></rect><path d="m22 7-8.97 5.7a1.83 1.83 0 0 1-2.06 0L2 7"></path>` },
-                    { name: 'WhatsApp', link: 'https://wa.me/201067941806', icon: `<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>` }, // Simplified icon
+                    { name: 'WhatsApp', link: 'https://wa.me/201067941806', icon: `<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>` },
                 ];
-
                 return `
                     <div class="max-w-4xl mx-auto p-4 md:p-8 text-start-lang animate-fade-in">
                         <h2 class="text-4xl font-extrabold text-indigo-400 mb-8">${t.contactTitle}</h2>
                         <p class="text-lg text-gray-300 mb-10">${t.contactIntro}</p>
-                        
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             ${contacts.map(contact => `
                                 <a href="#" data-link="${contact.link}" data-name="${contact.name}" onclick="moraCVX.showRedirectTimer(event)" class="glass-card p-6 rounded-2xl flex items-center space-x-4 ${state.lang === 'ar' ? 'space-x-reverse' : ''} hover:bg-white/10 transition-all duration-300 contact-icon-pulse">
@@ -1035,17 +1111,10 @@
                 const t = T[state.lang];
                 const data = state.cvData;
                 const p = data.personal;
-                
-                // Sort work experience by start date (newest first for ATS)
-                const sortedExperience = [...data.experience].sort((a, b) => {
-                    const dateA = new Date(a.start || 0);
-                    const dateB = new Date(b.start || 0);
-                    return dateB - dateA; // Newest first
-                });
+                const sortedExperience = [...data.experience].sort((a, b) => new Date(b.start) - new Date(a.start));
 
                 const cvContent = `
                     <div id="cv-content-ats" class="p-6 md:p-10 bg-white text-gray-800 shadow-xl rounded-lg relative print:shadow-none" style="width: 210mm; min-height: 297mm; direction: ${state.lang === 'ar' ? 'rtl' : 'ltr'}; font-family: 'Inter', sans-serif;">
-                        
                         <div class="mb-6 pb-2 border-b-2 border-gray-600 cv-ats-section text-${state.lang === 'ar' ? 'right' : 'left'}">
                             <h1 class="text-3xl font-bold mb-1">${p.fullName || t.fullName}</h1>
                             <h2 class="text-xl text-gray-600 mb-3">${p.jobTitle || t.jobTitle}</h2>
@@ -1060,14 +1129,12 @@
                             </div>
                             ${p.photo ? `<img src="${p.photo}" class="w-20 h-20 object-cover rounded-full absolute top-10 ${state.lang === 'ar' ? 'left-10' : 'right-10'}" alt="Photo">` : ''}
                         </div>
-
                         ${data.summary ? `
                         <div class="cv-ats-section mb-6" style="text-align: ${state.lang === 'ar' ? 'right' : 'left'};">
                             <h3 class="text-lg font-bold uppercase mb-2 pb-1 border-b border-gray-400">${t.sectionSummary}</h3>
                             <p class="text-sm leading-relaxed whitespace-pre-wrap">${data.summary}</p>
                         </div>
                         ` : ''}
-
                         ${data.experience.length > 0 ? `
                             <div class="cv-ats-section mb-6" style="text-align: ${state.lang === 'ar' ? 'right' : 'left'};">
                                 <h3 class="text-lg font-bold uppercase mb-3 pb-1 border-b border-gray-400">${t.sectionWork}</h3>
@@ -1078,13 +1145,12 @@
                                             <span class="text-gray-600">${exp.start || ''} - ${exp.end || t.currentlyWork}</span>
                                         </div>
                                         ${exp.description ? `<ul class="list-disc ${state.lang === 'ar' ? 'pr-5' : 'pl-5'} text-sm mt-1 space-y-0.5">
-                                            ${exp.description.split('\n').filter(line => line.trim()).map(line => `<li>${line.trim()}</li>`).join('')}
+                                            ${exp.description.split('\\n').filter(line => line.trim()).map(line => `<li>${line.trim()}</li>`).join('')}
                                         </ul>` : ''}
                                     </div>
                                 `).join('')}
                             </div>
                         ` : ''}
-
                         ${data.education.length > 0 ? `
                             <div class="cv-ats-section mb-6" style="text-align: ${state.lang === 'ar' ? 'right' : 'left'};">
                                 <h3 class="text-lg font-bold uppercase mb-3 pb-1 border-b border-gray-400">${t.sectionEducation}</h3>
@@ -1096,7 +1162,6 @@
                                 `).join('')}
                             </div>
                         ` : ''}
-
                         ${data.skills.length > 0 ? `
                             <div class="cv-ats-section mb-6" style="text-align: ${state.lang === 'ar' ? 'right' : 'left'};">
                                 <h3 class="text-lg font-bold uppercase mb-3 pb-1 border-b border-gray-400">${t.sectionSkills}</h3>
@@ -1107,7 +1172,6 @@
                                 </div>
                             </div>
                         ` : ''}
-                        
                         <div class="flex ${state.lang === 'ar' ? 'space-x-8 space-x-reverse' : 'space-x-8'}">
                             ${data.languages.length > 0 ? `
                                 <div class="w-1/2 cv-ats-section">
@@ -1117,7 +1181,6 @@
                                     </ul>
                                 </div>
                             ` : ''}
-                            
                             ${data.courses.length > 0 ? `
                                 <div class="w-1/2 cv-ats-section">
                                     <h3 class="text-lg font-bold uppercase mb-3 pb-1 border-b border-gray-400">${t.sectionCourses}</h3>
@@ -1127,14 +1190,11 @@
                                 </div>
                             ` : ''}
                         </div>
-
                     </div>
                 `;
-
                 return `
                     <div class="max-w-7xl mx-auto p-4 md:p-8 animate-fade-in">
                         <h2 class="text-4xl font-extrabold text-indigo-400 mb-8 text-center">${t.wizardSteps[state.maxWizardStep - 1]}</h2>
-                        
                         <div class="flex justify-center space-x-4 ${state.lang === 'ar' ? 'space-x-reverse' : ''} mb-8">
                             <button class="futuristic-btn bg-green-600 hover:bg-green-700" onclick="moraCVX.downloadPDF()">
                                 ${t.downloadPDF}
@@ -1146,7 +1206,6 @@
                                 ${t.backToEdit}
                             </button>
                         </div>
-                        
                         <div id="cv-preview-container" class="flex justify-center p-4 bg-gray-900 rounded-xl overflow-auto">
                             ${cvContent}
                         </div>
@@ -1154,37 +1213,59 @@
                 `;
             }
 
-            // --- WIZARD LOGIC (Existing code for data handling and navigation) ---
-
+            // --- WIZARD LOGIC ---
             function attachWizardEvents() {
                 const contentDiv = document.getElementById('wizard-content');
                 const backBtn = document.getElementById('back-btn');
                 const nextBtn = document.getElementById('next-btn');
                 const finishBtn = document.getElementById('finish-btn');
-                
-                // Navigation
+
                 if (backBtn) backBtn.addEventListener('click', () => changeWizardStep(-1));
-                if (nextBtn) nextBtn.addEventListener('click', () => changeWizardStep(1));
-                if (finishBtn) finishBtn.addEventListener('click', () => changeView('preview'));
-                
-                // Dynamic List Adders
-                if (state.cvWizardStep === 3) {
-                    document.getElementById('add-work-exp-btn').addEventListener('click', () => { addItem('experience', { title: '', company: '', start: '', end: '', description: '' }); });
-                }
-                if (state.cvWizardStep === 4) {
-                    document.getElementById('add-education-btn').addEventListener('click', () => { addItem('education', { degree: '', institution: '', date: '' }); });
-                }
-                if (state.cvWizardStep === 5) {
-                    document.getElementById('add-skill-btn').addEventListener('click', () => { addItem('skills', { name: '', level: '' }); });
-                }
-                if (state.cvWizardStep === 6) {
-                    document.getElementById('add-language-btn').addEventListener('click', () => { addItem('languages', { name: '', level: '' }); });
-                    document.getElementById('add-course-btn').addEventListener('click', () => { addItem('courses', { name: '', provider: '', date: '' }); });
+                if (nextBtn) nextBtn.addEventListener('click', () => {
+                    if (validateStep(state.cvWizardStep)) {
+                        changeWizardStep(1);
+                    }
+                });
+                if (finishBtn) finishBtn.addEventListener('click', () => {
+                    if (validateStep(state.cvWizardStep)) {
+                        changeView('preview');
+                    }
+                });
+
+                // Photo upload
+                const photoUpload = document.getElementById('photo-upload');
+                if (photoUpload) {
+                    photoUpload.addEventListener('change', (e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (ev) => {
+                                state.cvData.personal.photo = ev.target.result;
+                                saveCVDataToFirestore();
+                                renderView();
+                            };
+                            reader.readAsDataURL(file);
+                        }
+                    });
                 }
 
-                // Auto-save/Update on input change
-                contentDiv.querySelectorAll('input, textarea').forEach(input => {
-                    // Use 'blur' for non-step-changing save to reduce Firestore writes/localStorage updates
+                // Add buttons
+                if (state.cvWizardStep === 3) {
+                    document.getElementById('add-work-exp-btn')?.addEventListener('click', () => addItem('experience', { title: '', company: '', start: '', end: '', description: '' }));
+                }
+                if (state.cvWizardStep === 4) {
+                    document.getElementById('add-education-btn')?.addEventListener('click', () => addItem('education', { degree: '', institution: '', date: '' }));
+                }
+                if (state.cvWizardStep === 5) {
+                    document.getElementById('add-skill-btn')?.addEventListener('click', () => addItem('skills', { name: '', level: '' }));
+                }
+                if (state.cvWizardStep === 6) {
+                    document.getElementById('add-language-btn')?.addEventListener('click', () => addItem('languages', { name: '', level: '' }));
+                    document.getElementById('add-course-btn')?.addEventListener('click', () => addItem('courses', { name: '', provider: '', date: '' }));
+                }
+
+                // Auto-save on blur
+                contentDiv?.querySelectorAll('input, textarea').forEach(input => {
                     input.addEventListener('blur', updateCVData);
                 });
             }
@@ -1192,78 +1273,72 @@
             function updateCVData() {
                 const step = state.cvWizardStep;
                 const data = state.cvData;
-
                 switch (step) {
-                    case 1: // Personal Info
+                    case 1:
                         data.personal.fullName = document.getElementById('fullName')?.value || '';
                         data.personal.jobTitle = document.getElementById('jobTitle')?.value || '';
                         data.personal.phone = document.getElementById('phone')?.value || '';
                         data.personal.email = document.getElementById('email')?.value || '';
                         data.personal.city = document.getElementById('city')?.value || '';
                         data.personal.linkedin = document.getElementById('linkedin')?.value || '';
-                        data.personal.photo = document.getElementById('photo')?.value || '';
                         break;
-                    case 2: // Professional Summary
+                    case 2:
                         data.summary = document.getElementById('summary')?.value || '';
                         break;
-                    case 3: // Work Experience
+                    case 3:
                         data.experience = data.experience.map((exp, index) => ({
                             title: document.getElementById(`workTitle-${index}`)?.value || '',
                             company: document.getElementById(`workCompany-${index}`)?.value || '',
                             start: document.getElementById(`workStart-${index}`)?.value || '',
                             end: document.getElementById(`workEnd-${index}`)?.value || '',
                             description: document.getElementById(`workDesc-${index}`)?.value || '',
-                        })).filter(exp => exp.title || exp.company); // Remove empty entries
+                        })).filter(exp => exp.title || exp.company);
                         break;
-                    case 4: // Education
+                    case 4:
                         data.education = data.education.map((edu, index) => ({
                             degree: document.getElementById(`eduDegree-${index}`)?.value || '',
                             institution: document.getElementById(`eduInstitution-${index}`)?.value || '',
                             date: document.getElementById(`eduDate-${index}`)?.value || '',
-                        })).filter(edu => edu.degree || edu.institution); // Remove empty entries
+                        })).filter(edu => edu.degree || edu.institution);
                         break;
-                    case 5: // Skills
+                    case 5:
                         data.skills = data.skills.map((skill, index) => ({
                             name: document.getElementById(`skillName-${index}`)?.value || '',
                             level: document.getElementById(`skillLevel-${index}`)?.value || '',
-                        })).filter(skill => skill.name); // Remove empty entries
+                        })).filter(skill => skill.name);
                         break;
-                    case 6: // Languages & Courses
+                    case 6:
                         data.languages = data.languages.map((lang, index) => ({
                             name: document.getElementById(`langName-${index}`)?.value || '',
                             level: document.getElementById(`langLevel-${index}`)?.value || '',
-                        })).filter(lang => lang.name); // Remove empty entries
+                        })).filter(lang => lang.name);
                         data.courses = data.courses.map((course, index) => ({
                             name: document.getElementById(`courseName-${index}`)?.value || '',
                             provider: document.getElementById(`courseProvider-${index}`)?.value || '',
                             date: document.getElementById(`courseDate-${index}`)?.value || '',
-                        })).filter(course => course.name); // Remove empty entries
+                        })).filter(course => course.name);
                         break;
                 }
-
                 saveCVDataToFirestore();
             }
 
             function changeWizardStep(delta) {
-                // First, save data from the current step
                 updateCVData();
-                
                 let newStep = state.cvWizardStep + delta;
                 if (newStep >= 1 && newStep <= state.maxWizardStep) {
                     state.cvWizardStep = newStep;
-                    // Animation: simple fade out/in
                     const content = document.getElementById('wizard-content');
-                    if(content) {
+                    if (content) {
                         content.classList.remove('animate-fade-in');
-                        content.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+                        content.classList.add('opacity-0');
                         setTimeout(() => {
                             renderView();
                             const newContent = document.getElementById('wizard-content');
-                            if(newContent) {
+                            if (newContent) {
                                 newContent.classList.remove('opacity-0');
                                 newContent.classList.add('animate-fade-in');
                             }
-                        }, 300); // Wait for fade out
+                        }, 300);
                     } else {
                         renderView();
                     }
@@ -1272,58 +1347,42 @@
 
             function addItem(section, defaultItem) {
                 state.cvData[section].push(defaultItem);
-                renderView(); // Re-render the wizard step to show new item
+                renderView();
             }
-            
+
             function removeItem(section, index) {
                 state.cvData[section].splice(index, 1);
                 saveCVDataToFirestore();
-                renderView(); // Re-render the wizard step
+                renderView();
             }
 
-            // --- ACTION HANDLERS (PDF and Copy) ---
-            
+            // --- ACTIONS ---
             function downloadPDF() {
                 const element = document.getElementById('cv-content-ats');
                 const t = T[state.lang];
-                
                 if (!element) return;
-                
-                // Custom options for html2pdf
                 const options = {
-                    margin: [10, 10, 10, 10], // top, left, bottom, right (10mm)
+                    margin: 10,
                     filename: (state.cvData.personal.fullName || 'CV') + '_Mora-CVX.pdf',
                     image: { type: 'jpeg', quality: 0.98 },
                     html2canvas: { scale: 2, logging: false, dpi: 192, letterRendering: true, useCORS: true },
                     jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
                 };
-
-                html2pdf().from(element).set(options).save().then(() => {
-                    // console.log("PDF generated.");
-                }).catch(error => {
-                    console.error("PDF generation failed:", error);
-                    alert(`${t.lang === 'ar' ? 'فشل توليد ملف PDF. يرجى المحاولة مرة أخرى.' : 'PDF generation failed. Please try again.'}`);
+                html2pdf().from(element).set(options).save().catch(err => {
+                    console.error("PDF error:", err);
+                    alert(state.lang === 'ar' ? 'فشل توليد ملف PDF. يرجى المحاولة مرة أخرى.' : 'PDF generation failed. Please try again.');
                 });
             }
 
             function copyCVText() {
                 const element = document.getElementById('cv-content-ats');
                 if (!element) return;
-
-                // Create a text-only representation for copying
                 const textContent = element.innerText;
-
-                // Use the modern clipboard API if available
                 if (navigator.clipboard) {
                     navigator.clipboard.writeText(textContent).then(() => {
                         showNotification(state.lang === 'ar' ? 'تم نسخ نص السيرة الذاتية بنجاح!' : 'CV text copied successfully!');
-                    }).catch(err => {
-                        console.error('Copy failed with modern API: ', err);
-                        // Fallback to old method
-                        fallbackCopyTextToClipboard(textContent);
-                    });
+                    }).catch(err => fallbackCopyTextToClipboard(textContent));
                 } else {
-                    // Fallback for older browsers
                     fallbackCopyTextToClipboard(textContent);
                 }
             }
@@ -1331,72 +1390,55 @@
             function fallbackCopyTextToClipboard(text) {
                 const textarea = document.createElement('textarea');
                 textarea.value = text;
-                textarea.style.position = 'fixed'; 
+                textarea.style.position = 'fixed';
                 document.body.appendChild(textarea);
                 textarea.focus();
                 textarea.select();
-                
                 try {
-                    const successful = document.execCommand('copy');
-                    const msg = successful ? (state.lang === 'ar' ? 'تم نسخ نص السيرة الذاتية بنجاح!' : 'CV text copied successfully!') : (state.lang === 'ar' ? 'فشل النسخ.' : 'Copy failed.');
-                    showNotification(msg);
+                    const ok = document.execCommand('copy');
+                    showNotification(ok ? (state.lang === 'ar' ? 'تم النسخ!' : 'Copied!') : (state.lang === 'ar' ? 'فشل النسخ.' : 'Copy failed.'));
                 } catch (err) {
-                    console.error('Copy failed: ', err);
                     showNotification(state.lang === 'ar' ? 'فشل النسخ (يرجى المحاولة يدويًا).' : 'Copy failed (please try manually).', 'error');
                 } finally {
                     document.body.removeChild(textarea);
                 }
             }
-            
+
             function showNotification(message, type = 'success') {
                 const notification = document.createElement('div');
                 notification.className = `fixed top-4 ${state.lang === 'ar' ? 'left-4' : 'right-4'} p-4 rounded-lg shadow-xl text-white z-50 transition-opacity duration-300 animate-fade-in`;
                 notification.style.backgroundColor = type === 'success' ? '#10b981' : '#ef4444';
                 notification.textContent = message;
                 document.body.appendChild(notification);
-                
-                // Fade out and remove after 3 seconds
                 setTimeout(() => {
                     notification.style.opacity = '0';
                     setTimeout(() => notification.remove(), 300);
                 }, 3000);
             }
 
-            // --- REDIRECT TIMER LOGIC ---
             function showRedirectTimer(event) {
                 event.preventDefault();
                 const target = event.currentTarget;
                 const url = target.getAttribute('data-link');
                 const name = target.getAttribute('data-name');
                 const t = T[state.lang];
-                
                 if (!url) return;
-
                 elements.redirectMessage.textContent = `${t.redirecting} ${name}`;
                 elements.redirectOverlay.classList.remove('hidden', 'opacity-0');
                 elements.redirectOverlay.classList.add('opacity-100');
-
                 let count = 3;
                 elements.redirectTimer.textContent = count;
-
-                const timerInterval = setInterval(() => {
+                const timer = setInterval(() => {
                     count -= 1;
                     elements.redirectTimer.textContent = count;
-                    
                     if (count <= 0) {
-                        clearInterval(timerInterval);
+                        clearInterval(timer);
                         window.location.href = url;
-                        // Hide overlay immediately after redirect
-                        elements.redirectOverlay.classList.remove('opacity-100');
-                        elements.redirectOverlay.classList.add('opacity-0', 'hidden');
+                        elements.redirectOverlay.classList.add('opacity-0');
+                        setTimeout(() => elements.redirectOverlay.classList.add('hidden'), 300);
                     }
                 }, 1000);
-
-                // Add an emergency exit button just in case
-                // For this example, we'll just let the timer run its course.
             }
-            
-            // --- CORE NAVIGATION/STATE FUNCTIONS ---
 
             function changeLanguage(lang) {
                 state.lang = lang;
@@ -1406,18 +1448,15 @@
 
             function changeView(view, event = null, step = 1) {
                 if (event) event.preventDefault();
+                if (state.view === 'langSelect') destroyThreeJS();
                 state.view = view;
-                if (view === 'wizard') {
-                    state.cvWizardStep = step;
-                }
+                if (view === 'wizard') state.cvWizardStep = step;
                 renderView();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             }
-            
+
             function toggleMobileMenu(show) {
-                if (show === undefined) {
-                    show = elements.mobileMenuOverlay.classList.contains('hidden');
-                }
+                if (show === undefined) show = elements.mobileMenuOverlay.classList.contains('hidden');
                 if (show) {
                     elements.mobileMenuOverlay.classList.remove('hidden');
                     setTimeout(() => elements.mobileMenuOverlay.classList.remove('opacity-0'), 10);
@@ -1426,54 +1465,35 @@
                     setTimeout(() => elements.mobileMenuOverlay.classList.add('hidden'), 300);
                 }
             }
-            
+
             function showSplash() {
                 const splashShown = localStorage.getItem(STORAGE_KEY_SPLASH);
-                
                 if (splashShown) {
                     elements.splashScreen.classList.add('hidden');
                     state.view = 'langSelect';
                     renderView();
                     return;
                 }
-                
-                // 1.5s for write-on effect, then show credit
                 setTimeout(() => {
-                    elements.devCredit.classList.add('dev-credit-anim'); // Apply professional fade-in
+                    elements.devCredit.classList.add('dev-credit-anim');
                     elements.devCredit.style.opacity = '1';
                 }, 1500);
-
-                // 2.5s display + 0.5s fade-out = 3s total
+                setTimeout(() => elements.splashScreen.classList.remove('opacity-100'), 3000);
                 setTimeout(() => {
-                    // Start fading out logo and credit
-                    elements.splashScreen.classList.remove('opacity-100');
-                    elements.splashScreen.classList.add('opacity-0');
-                }, 3000); // 3 seconds to ensure both animations run fully
-
-                setTimeout(() => {
-                    // Hide splash and proceed to app
                     elements.splashScreen.classList.add('hidden');
                     localStorage.setItem(STORAGE_KEY_SPLASH, 'true');
                     state.view = 'langSelect';
                     renderView();
-                }, 3500); // Total 3.5 seconds before hiding
+                }, 3500);
             }
 
-            // --- INITIALIZATION ---
-
             function init() {
-                // Initialize Firebase first
                 window.initializeFirebase();
-                
-                // Add event listeners for mobile menu
                 elements.mobileMenuBtn.addEventListener('click', () => toggleMobileMenu(true));
                 elements.closeMobileMenu.addEventListener('click', () => toggleMobileMenu(false));
-                
-                // Start the app flow
                 showSplash();
             }
 
-            // Public interface
             return {
                 init,
                 changeLanguage,
@@ -1486,8 +1506,8 @@
                 copyCVText,
                 toggleMobileMenu,
                 setFirebaseReady,
-                showRedirectTimer, // Exposed for use in HTML
-                state: () => state // For inspection only
+                showRedirectTimer,
+                state: () => state
             };
         })();
 
