@@ -173,7 +173,6 @@
         .input-error-label {
             color: #ef4444 !important;
         }
-        /* خلفية Three.js */
         #three-canvas {
             position: fixed;
             top: 0;
@@ -210,14 +209,13 @@
             grid-template-columns: 1fr;
             @apply sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4;
         }
-        /* ✅ CV المعروض للطباعة/المعاينة - بدون فراغات زائدة، منسق بصرًا، ومتوافق مع الشركات */
         #cv-content-ats {
             width: 210mm;
             min-height: 297mm;
             max-width: 95vw;
             overflow: hidden;
-            font-size: 12px;
-            line-height: 1.4;
+            font-size: 12pt;
+            line-height: 1.5;
             padding: 20mm 15mm;
             margin: 0 auto;
             box-sizing: border-box;
@@ -229,18 +227,31 @@
             overflow-x: auto;
             padding: 10px;
         }
-        header.glass-card {
-            padding: 0.75rem 1rem !important;
-            @apply md:px-4 md:py-3;
+        /* ✅ Header Slim + Horizontal Scroll */
+        #app-header {
+            padding: 0.4rem 0.6rem !important;
+            height: 48px;
+            @apply md:px-3 md:py-2;
         }
-        .header-nav-links {
+        #nav-container {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
-            @apply md:gap-4 lg:gap-5;
+            gap: 0.5rem;
+            overflow-x: auto;
+            scrollbar-width: thin;
+            -ms-overflow-style: none;
+            white-space: nowrap;
         }
-        .header-nav-links a {
-            @apply text-sm md:text-base font-medium text-gray-300 hover:text-indigo-400 transition-colors;
+        #nav-container::-webkit-scrollbar {
+            display: none;
+        }
+        #nav-container a {
+            @apply text-xs md:text-sm font-medium text-gray-300 hover:text-indigo-400 transition-colors;
+            min-width: max-content;
+        }
+        .app-title {
+            font-size: 1.25rem;
+            @apply md:text-xl;
         }
     </style>
 </head>
@@ -264,9 +275,9 @@
     </div>
     <!-- App -->
     <div id="app-container" class="hidden min-h-screen">
-        <header id="app-header" class="glass-card sticky top-0 z-40 flex justify-between items-center transition-all duration-300">
-            <h1 class="text-xl md:text-2xl font-extrabold text-indigo-400 dev-text-3d truncate">Mora – CVX</h1>
-            <nav class="header-nav-links" id="nav-links"></nav>
+        <header id="app-header" class="glass-card sticky top-0 z-40 flex items-center justify-between transition-all duration-300">
+            <h1 class="app-title font-extrabold text-indigo-400 dev-text-3d truncate">Mora – CVX</h1>
+            <nav id="nav-container"></nav>
         </header>
         <main id="main-view" class="p-2 md:p-4 lg:p-8"></main>
         <canvas id="three-canvas"></canvas>
@@ -300,7 +311,7 @@
                 appContainer: document.getElementById('app-container'),
                 mainView: document.getElementById('main-view'),
                 header: document.getElementById('app-header'),
-                navLinks: document.getElementById('nav-links'),
+                navContainer: document.getElementById('nav-container'),
                 threeCanvas: document.getElementById('three-canvas'),
                 redirectOverlay: document.getElementById('redirect-overlay'),
                 redirectMessage: document.getElementById('redirect-message'),
@@ -602,11 +613,12 @@
             function renderHeaderAndNav() {
                 const t = T[state.lang];
                 const navLinks = [
+                    { name: t.navHome, view: 'landing' },
                     { name: t.navPreview, view: 'preview' },
                     { name: t.navPolicy, view: 'policy' },
                     { name: t.navContact, view: 'contact' },
                 ];
-                elements.navLinks.innerHTML = navLinks.map(link => `
+                elements.navContainer.innerHTML = navLinks.map(link => `
                     <a href="#" data-view="${link.view}" class="whitespace-nowrap" onclick="moraCVX.changeView('${link.view}', event)">
                         ${link.name}
                     </a>
@@ -685,7 +697,6 @@
                 });
                 particles = new THREE.Points(particlesGeometry, particlesMaterial);
                 scene.add(particles);
-                const texts = ['CV', 'Exp', 'Edu', 'Skills', 'Mora', 'ATS'];
                 const meshCount = window.innerWidth < 640 ? 10 : 30;
                 for (let i = 0; i < meshCount; i++) {
                     const geo = new THREE.SphereGeometry(0.07 + Math.random() * 0.12, 16, 16);
@@ -1123,7 +1134,7 @@
                                             <span style="color: #4b5563;">${exp.start || ''} – ${exp.end || t.currentlyWork}</span>
                                         </div>
                                         ${exp.description ? `<ul style="padding-${state.lang === 'ar' ? 'right' : 'left'}: 20px; margin-top: 4px; list-style-type: disc; font-size: 11pt; line-height: 1.4;">
-                                            ${exp.description.split('\n').filter(line => line.trim()).map(line => `<li>${line.trim()}</li>`).join('')}
+                                            ${exp.description.split('\\n').filter(line => line.trim()).map(line => `<li>${line.trim()}</li>`).join('')}
                                         </ul>` : ''}
                                     </div>
                                 `).join('')}
